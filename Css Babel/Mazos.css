@@ -1,0 +1,1044 @@
+/* ═══════════════════════════════════════════════════════════════
+   MAZOS.CSS - Armería de Mazos de Operación Babel
+   Estilo: Militar táctico oscuro con efectos de terminal
+   ═══════════════════════════════════════════════════════════════ */
+
+@import 'Babelhome.css';
+
+:root {
+    --terminal-green: #5a7a5a;
+    --terminal-amber: #8b7355;
+    --card-bg: rgba(25, 25, 25, 0.9);
+    --nav-height: 100px;
+    --bg-dark: #0a0a0a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    overflow-x: hidden;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: #fff;
+    font-family: 'Courier New', Courier, monospace;
+    overflow-x: hidden;
+    min-height: 100vh;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EFECTOS ATMOSFÉRICOS (Spotlight + Niebla)
+   ═══════════════════════════════════════════════════════════════ */
+.spotlight {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 100vh;
+    background: radial-gradient(circle at top center, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.fog-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50vh;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    filter: blur(20px);
+    opacity: 0.6;
+    mix-blend-mode: screen;
+    animation: fog-float 20s ease-in-out infinite;
+}
+
+.fog-container::before,
+.fog-container::after {
+    content: "";
+    position: absolute;
+    inset: -20% -15% -5% -15%;
+    background:
+        radial-gradient(ellipse 20% 10% at 14% 88%, rgba(255, 255, 255, 0.2) 0%, transparent 72%),
+        radial-gradient(ellipse 22% 12% at 30% 82%, rgba(255, 255, 255, 0.15) 0%, transparent 74%),
+        radial-gradient(ellipse 28% 14% at 50% 90%, rgba(255, 255, 255, 0.12) 0%, transparent 76%),
+        radial-gradient(ellipse 24% 12% at 72% 84%, rgba(255, 255, 255, 0.15) 0%, transparent 74%),
+        radial-gradient(ellipse 18% 10% at 88% 92%, rgba(255, 255, 255, 0.1) 0%, transparent 76%),
+        linear-gradient(to top, rgba(255, 255, 255, 0.1) 0%, transparent 78%);
+    background-size: 180% 180%;
+    background-repeat: no-repeat;
+}
+
+.fog-container::before {
+    animation: fog-drift-left 26s ease-in-out infinite;
+}
+
+.fog-container::after {
+    opacity: 0.7;
+    animation: fog-drift-right 34s ease-in-out infinite;
+}
+
+@keyframes fog-float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-2vh) scale(1.02); }
+}
+
+@keyframes fog-drift-left {
+    0% { transform: translateX(-10%) translateY(0) scale(1.02); }
+    50% { transform: translateX(5%) translateY(-1%) scale(1.05); }
+    100% { transform: translateX(-10%) translateY(0) scale(1.02); }
+}
+
+@keyframes fog-drift-right {
+    0% { transform: translateX(10%) translateY(0) scale(1.04); }
+    50% { transform: translateX(-5%) translateY(-1%) scale(1.06); }
+    100% { transform: translateX(10%) translateY(0) scale(1.04); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVEGACIÓN SUPERIOR
+   ═══════════════════════════════════════════════════════════════ */
+header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    will-change: opacity, transform;
+}
+
+body.header-hidden header {
+    opacity: 0;
+    transform: translateY(-24px);
+    pointer-events: none;
+}
+
+.brand-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.brand-container img {
+    width: 40px;
+    display: block;
+    margin: 0 auto 5px;
+    filter: invert(1);
+}
+
+.menu-icon {
+    cursor: pointer;
+}
+
+.user-icon {
+    cursor: pointer;
+}
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--nav-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    background: linear-gradient(to bottom, rgba(10, 10, 10, 0.98), rgba(5, 5, 5, 0.95));
+    border-bottom: 1px solid rgba(179, 0, 0, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    z-index: 50;
+}
+
+.nav-side {
+    width: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.6rem;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.nav-side:hover {
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.nav-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    letter-spacing: 6px;
+    gap: 4px;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.nav-brand i {
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.nav-brand span {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #aaa;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR TÁCTICA
+   ═══════════════════════════════════════════════════════════════ */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100vh;
+    color: rgba(235, 235, 235, 0.88);
+    background:
+        linear-gradient(180deg, rgba(7, 10, 16, 0.78) 0%, rgba(5, 8, 14, 0.7) 100%),
+        radial-gradient(circle at 30% -10%, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 58%);
+    border-right: 1px solid rgba(220, 220, 220, 0.18);
+    box-shadow: 14px 0 44px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px) saturate(120%);
+    z-index: 110;
+    display: flex;
+    flex-direction: column;
+    transition: left 0.42s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.35s ease;
+    overflow: hidden;
+    opacity: 0.96;
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+.sidebar::before {
+    content: "";
+    position: absolute;
+    inset: auto -18% -12% -18%;
+    height: 42%;
+    background:
+        radial-gradient(ellipse 34% 16% at 18% 88%, rgba(255, 255, 255, 0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 36% 18% at 68% 92%, rgba(255, 255, 255, 0.06) 0%, transparent 72%);
+    filter: blur(18px);
+    pointer-events: none;
+}
+
+.sidebar-header {
+    padding: 26px 22px;
+    border-bottom: 1px solid rgba(220, 220, 220, 0.14);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: rgba(245, 245, 245, 0.9);
+}
+
+.sidebar-header span {
+    font-size: 0.88rem;
+    letter-spacing: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 16px 0;
+    flex: 1;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 13px 24px;
+    color: rgba(224, 224, 224, 0.7);
+    text-decoration: none;
+    font-size: 1.02rem;
+    letter-spacing: 0.9px;
+    transition: color 0.24s ease, background 0.24s ease, transform 0.24s ease, border-color 0.24s ease;
+    border-left: 2px solid transparent;
+}
+
+.sidebar-menu li a:hover {
+    color: rgba(245, 245, 245, 0.96);
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: rgba(215, 215, 215, 0.6);
+    transform: translateX(3px);
+}
+
+.sidebar-menu li a.active {
+    color: #f1f1f1;
+    background: linear-gradient(90deg, rgba(134, 20, 20, 0.24), rgba(134, 20, 20, 0.08) 62%, rgba(255, 255, 255, 0));
+    border-left-color: rgba(145, 30, 30, 0.7);
+    text-shadow: 0 0 9px rgba(255, 255, 255, 0.16);
+}
+
+.sidebar-footer {
+    padding: 18px 22px 20px;
+    border-top: 1px solid rgba(220, 220, 220, 0.12);
+    background: linear-gradient(180deg, rgba(6, 9, 14, 0.25), rgba(6, 9, 14, 0.45));
+}
+
+.soldier-status {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.status-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-label {
+    font-size: 0.72rem;
+    letter-spacing: 2.4px;
+    text-transform: uppercase;
+    opacity: 0.72;
+}
+
+.soldier-status i {
+    font-size: 1rem;
+    color: rgba(179, 0, 0, 0.82);
+}
+
+.lives-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.life {
+    width: 24px;
+    height: 7px;
+    border-radius: 2px;
+    background: rgba(235, 235, 235, 0.11);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all 0.3s ease;
+}
+
+.life.active {
+    background: linear-gradient(90deg, rgba(140, 10, 10, 0.92), rgba(179, 25, 25, 0.95));
+    box-shadow: 0 0 10px rgba(179, 25, 25, 0.35);
+    border-color: rgba(165, 35, 35, 0.4);
+}
+
+.rank-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(225, 225, 225, 0.78);
+    letter-spacing: 1px;
+}
+
+.rank-icon {
+    font-size: 1rem;
+    opacity: 0.84;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(18, 24, 36, 0.24), rgba(0, 0, 0, 0.54));
+    backdrop-filter: blur(3px);
+    z-index: 105;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.34s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTENIDO PRINCIPAL
+   ═══════════════════════════════════════════════════════════════ */
+.main-content {
+    flex: 1;
+    position: relative;
+    z-index: 5;
+    padding-top: calc(var(--nav-height) + 30px);
+    padding-bottom: 60px;
+    min-height: 0;
+}
+
+.page-hero {
+    position: relative;
+    padding-bottom: 90px;
+}
+
+.page-hero .scroll-btn {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.page-mission {
+    padding-top: 10px;
+}
+
+.section-header {
+    text-align: center;
+    padding: 40px 20px 30px;
+    border-bottom: 1px solid rgba(179, 0, 0, 0.2);
+    margin-bottom: 30px;
+    margin-top: 20px;
+}
+
+.section-header h1 {
+    font-size: 2rem;
+    letter-spacing: 8px;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    margin-bottom: 10px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.section-header h1 i {
+    margin-right: 15px;
+}
+
+.section-subtitle {
+    color: #666;
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BARRA TÁCTICA (Filtros + Stats)
+   ═══════════════════════════════════════════════════════════════ */
+.tactical-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-group label {
+    color: var(--terminal-green);
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-group select {
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid rgba(179, 0, 0, 0.4);
+    color: #fff;
+    padding: 8px 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.filter-group select:hover,
+.filter-group select:focus {
+    border-color: var(--military-red);
+    box-shadow: 0 0 10px rgba(179, 0, 0, 0.2);
+}
+
+.filter-group select option {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.stats-mini {
+    display: flex;
+    gap: 25px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.stat-item i {
+    color: var(--terminal-amber);
+}
+
+.stat-item span {
+    color: #fff;
+    font-weight: bold;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GRID DE MAZOS
+   ═══════════════════════════════════════════════════════════════ */
+.mazos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 30px;
+    padding: 0 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Tarjeta de Mazo - Estilo expediente militar */
+.mazo-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.mazo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--military-red), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mazo-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: rgba(179, 0, 0, 0.5);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.6),
+        0 0 30px rgba(179, 0, 0, 0.1),
+        inset 0 0 60px rgba(179, 0, 0, 0.03);
+}
+
+.mazo-card:hover::before {
+    opacity: 1;
+}
+
+/* Cinta de clasificación */
+.mazo-classification {
+    position: absolute;
+    top: 15px;
+    right: -35px;
+    width: 140px;
+    text-align: center;
+    padding: 5px 0;
+    font-size: 0.78rem;
+    letter-spacing: 2.4px;
+    font-weight: bold;
+    transform: rotate(45deg);
+    z-index: 10;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.75);
+}
+
+.mazo-classification.clasificado {
+    background: #2f8f4d;
+    color: #fff;
+}
+
+.mazo-classification.secreto {
+    background: #b9821e;
+    color: #fff;
+}
+
+.mazo-classification.ultra-secreto {
+    background: #7d1010;
+    color: #fff;
+}
+
+/* Contenido de la tarjeta */
+.mazo-content {
+    padding: 30px 25px 25px;
+}
+
+.mazo-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    display: block;
+    text-align: center;
+    filter: grayscale(0.3);
+    transition: all 0.3s ease;
+}
+
+.mazo-card:hover .mazo-icon {
+    filter: grayscale(0);
+    transform: scale(1.1);
+}
+
+.mazo-title {
+    font-size: 1.1rem;
+    letter-spacing: 3px;
+    text-align: center;
+    margin-bottom: 8px;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+.mazo-description {
+    font-size: 0.8rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+/* Barra de progreso del mazo */
+.mazo-progress {
+    margin-bottom: 20px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #555;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+}
+
+.progress-bar-bg {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--military-red), #ff4444);
+    transition: width 0.8s ease;
+    position: relative;
+}
+
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
+    animation: progress-shine 2s ease-in-out infinite;
+}
+
+@keyframes progress-shine {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+/* Stats del mazo */
+.mazo-stats {
+    display: flex;
+    justify-content: space-around;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mazo-stat {
+    text-align: center;
+}
+
+.mazo-stat-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--terminal-green);
+    display: block;
+}
+
+.mazo-stat-label {
+    font-size: 0.7rem;
+    color: #d8f3d8;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Badge de idioma */
+.mazo-lang-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.65);
+    color: #f5f5f5;
+}
+
+.mazo-lang-badge.ru,
+.mazo-lang-badge.zh {
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.65);
+    color: #f5f5f5;
+}
+
+/* Efecto de sello "COMPLETADO" */
+.mazo-completed-stamp {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg) scale(0);
+    border: 3px solid var(--terminal-green);
+    color: var(--terminal-green);
+    padding: 10px 25px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    opacity: 0;
+    transition: all 0.5s ease;
+    pointer-events: none;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.mazo-card.completed .mazo-completed-stamp {
+    transform: translate(-50%, -50%) rotate(-15deg) scale(1);
+    opacity: 0.9;
+}
+
+.mazo-card.completed {
+    opacity: 0.7;
+    border-color: var(--terminal-green);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODAL DE MISIÓN
+   ═══════════════════════════════════════════════════════════════ */
+.mission-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s ease;
+    backdrop-filter: blur(5px);
+}
+
+.mission-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
+    border: 2px solid var(--military-red);
+    max-width: 500px;
+    width: 90%;
+    padding: 0;
+    transform: scale(0.9);
+    transition: transform 0.4s ease;
+    box-shadow: 0 0 60px rgba(179, 0, 0, 0.2);
+}
+
+.mission-modal.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    background: rgba(179, 0, 0, 0.1);
+    padding: 25px;
+    text-align: center;
+    border-bottom: 1px solid rgba(179, 0, 0, 0.3);
+}
+
+.modal-header i {
+    font-size: 2.5rem;
+    color: var(--military-red);
+    margin-bottom: 10px;
+    display: block;
+    animation: pulse-warning 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.modal-header h3 {
+    font-size: 1.3rem;
+    letter-spacing: 4px;
+    color: #fff;
+    margin: 0;
+}
+
+.modal-body {
+    padding: 30px 25px;
+    text-align: center;
+}
+
+.modal-body p {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.mazo-name-highlight {
+    color: var(--terminal-amber);
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+}
+
+.mission-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 20px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mission-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.mission-stat i {
+    font-size: 1.5rem;
+    color: var(--terminal-green);
+}
+
+.mission-stat span {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    padding: 25px;
+    justify-content: center;
+}
+
+.btn-cancel,
+.btn-confirm {
+    padding: 12px 30px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border: 2px solid;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.btn-cancel {
+    background: transparent;
+    border-color: #444;
+    color: #888;
+}
+
+.btn-cancel:hover {
+    border-color: #666;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-confirm {
+    background: var(--military-red);
+    border-color: var(--military-red);
+    color: #fff;
+}
+
+.btn-confirm:hover {
+    background: #cc0000;
+    border-color: #cc0000;
+    box-shadow: 0 0 20px rgba(179, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════════ */
+footer {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(to top, #000 0%, #020202 55%, #070707 100%);
+    padding: 70px 50px 55px;
+    font-size: 0.8rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: #a0a0a0;
+    text-align: center;
+    z-index: 10;
+    margin-top: auto;
+}
+
+footer::before {
+    top: -70px;
+    height: 140px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 35%, transparent 100%);
+    filter: blur(18px);
+    opacity: 0.7;
+    animation: footer-fog-rise 14s ease-in-out infinite;
+}
+
+footer::after {
+    inset: 0;
+    background:
+        radial-gradient(ellipse 22% 10% at 14% 88%, rgba(255, 255, 255, 0.06) 0%, transparent 72%),
+        radial-gradient(ellipse 24% 12% at 40% 92%, rgba(255, 255, 255, 0.045) 0%, transparent 74%),
+        radial-gradient(ellipse 26% 12% at 68% 86%, rgba(255, 255, 255, 0.05) 0%, transparent 76%),
+        radial-gradient(ellipse 18% 10% at 88% 90%, rgba(255, 255, 255, 0.04) 0%, transparent 78%);
+    filter: blur(14px);
+    opacity: 0.42;
+    animation: footer-fog-drift 18s ease-in-out infinite;
+}
+
+footer::before,
+footer::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+footer > * {
+    position: relative;
+    z-index: 1;
+}
+
+.footer-line {
+    margin: 5px 0;
+    letter-spacing: 1px;
+}
+
+.highlight {
+    color: #d0d0d0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMACIONES Y EFECTOS ESPECIALES
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+}
+
+@keyframes footer-fog-rise {
+    0%, 100% { transform: translateY(0); opacity: 0.5; }
+    50% { transform: translateY(-10px); opacity: 0.9; }
+}
+
+@keyframes footer-fog-drift {
+    0%, 100% { transform: translateX(-1%) translateY(0); }
+    50% { transform: translateX(1.5%) translateY(-4px); }
+}
+
+.mazo-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    animation: scanline 4s linear infinite;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mazo-card:hover::after {
+    opacity: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mazos-grid {
+        grid-template-columns: 1fr;
+        padding: 0 20px;
+    }
+
+    .tactical-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        justify-content: center;
+    }
+
+    .section-header h1 {
+        font-size: 1.4rem;
+        letter-spacing: 4px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+}

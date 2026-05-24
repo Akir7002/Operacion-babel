@@ -1,0 +1,795 @@
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BASE DE DATOS: OPERACION_BABEL
+   PROYECTO: Entrenamiento de Inteligencia Militar (Lenguaje)
+   MOTOR: SQL Server
+   ESTRATEGIA: MULTILENGUAJE ESCALABLE (Cirílico RU + Hanzi ZH)
+   TABLAS TOTALES: 20 (>= 18 requeridas)
+
+   RECOMENDACIONES APLICADAS:
+   ✓ 1. Diccionario: Categoria NVARCHAR → IdCategoria INT (FK a Categorias)
+   ✓ 2. Diccionario: NivelDificultad INT → IdNivel INT (FK a NivelesDificultad)
+   ✓ 3. Índices estratégicos en campos de búsqueda frecuente
+   ✓ 4. Campo AudioUrl en Diccionario (extensible a tabla Audios dedicada)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+USE master;
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 0. CREACIÓN DE BASE DE DATOS
+-- ═══════════════════════════════════════════════════════════════════════════════
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'OperacionBabel')
+BEGIN
+    CREATE DATABASE OperacionBabel
+    COLLATE Latin1_General_100_CI_AS_SC_UTF8; -- Soporte completo Unicode para emojis y Hanzi
+END
+GO
+
+USE OperacionBabel;
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 1. LIMPIEZA OPCIONAL DEL ESQUEMA
+-- Útil cuando necesitas reconstruir toda la base sin errores por FKs existentes
+-- ═══════════════════════════════════════════════════════════════════════════════
+DROP TABLE IF EXISTS dbo.Estadisticas;
+DROP TABLE IF EXISTS dbo.RachaDiaria;
+DROP TABLE IF EXISTS dbo.UsuarioLogros;
+DROP TABLE IF EXISTS dbo.ProgresoFlashcards;
+DROP TABLE IF EXISTS dbo.HistorialGameOver;
+DROP TABLE IF EXISTS dbo.HistorialErrores;
+DROP TABLE IF EXISTS dbo.DesafiosInfiltracion;
+DROP TABLE IF EXISTS dbo.SesionesEntrenamiento;
+DROP TABLE IF EXISTS dbo.Logros;
+DROP TABLE IF EXISTS dbo.ConfiguracionUsuario;
+DROP TABLE IF EXISTS dbo.RegistrosAlistamiento;
+DROP TABLE IF EXISTS dbo.Usuarios;
+DROP TABLE IF EXISTS dbo.Flashcards;
+DROP TABLE IF EXISTS dbo.MazosFlashcards;
+DROP TABLE IF EXISTS dbo.Frases;
+DROP TABLE IF EXISTS dbo.Diccionario;
+DROP TABLE IF EXISTS dbo.NivelesDificultad;
+DROP TABLE IF EXISTS dbo.Categorias;
+DROP TABLE IF EXISTS dbo.Rangos;
+DROP TABLE IF EXISTS dbo.Idiomas;
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- CAPA 1: CATÁLOGOS MAESTROS (4 tablas)
+-- Tablas de referencia que alimentan al resto del sistema
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [01] IDIOMAS
+-- Define los idiomas soportados: Ruso, Mandarín, y futuros escalables
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [01] Idiomas...';
+GO
+
+CREATE TABLE Idiomas (
+    IdIdioma        INT IDENTITY(1,1) PRIMARY KEY,
+    Nombre          NVARCHAR(50)    NOT NULL,        -- Ej: 'Ruso', 'Mandarín'
+    CodigoISO       CHAR(2)         NOT NULL,        -- Ej: 'RU', 'ZH'
+    EsteticaVisual  NVARCHAR(50)    NULL,            -- CSS theme: 'soviet_style.css'
+
+    CONSTRAINT UQ_Idiomas_CodigoISO UNIQUE (CodigoISO),
+    CONSTRAINT UQ_Idiomas_Nombre UNIQUE (Nombre)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Idiomas_Nombre ON Idiomas(Nombre);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [02] RANGOS
+-- Sistema de progresión militar del usuario
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [02] Rangos...';
+GO
+
+CREATE TABLE Rangos (
+    IdRango         INT IDENTITY(1,1) PRIMARY KEY,
+    NombreRango     NVARCHAR(50)    NOT NULL,        -- Ej: 'Recluta', 'Espía'
+    NivelRequerido  INT             NOT NULL,        -- XP mínimo para alcanzar
+    IconoMilitar    NVARCHAR(50)    NULL,            -- Emoji/icono del rango
+    Descripcion     NVARCHAR(255)   NULL,            -- Lore del rango
+
+    CONSTRAINT UQ_Rangos_NombreRango UNIQUE (NombreRango)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Rangos_NivelRequerido ON Rangos(NivelRequerido);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [03] CATEGORIAS  ← NUEVA TABLA (Recomendación #1: Normalización)
+-- Maestro de categorías de vocabulario (antes campo libre en Diccionario)
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [03] Categorias...';
+GO
+
+CREATE TABLE Categorias (
+    IdCategoria     INT IDENTITY(1,1) PRIMARY KEY,
+    NombreCategoria NVARCHAR(100)   NOT NULL,        -- 'Militar', 'Supervivencia', 'Slang'
+    Descripcion     NVARCHAR(255)   NULL,
+    IconoMilitar    NVARCHAR(50)    NULL,            -- '🎖️', '🔫', '🛡️'
+    OrdenVisual     INT             DEFAULT 0,       -- Para ordenar en UI
+
+    CONSTRAINT UQ_Categorias_Nombre UNIQUE (NombreCategoria)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Categorias_Orden ON Categorias(OrdenVisual);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [04] NIVELES DE DIFICULTAD  ← NUEVA TABLA (Recomendación #2: Normalización)
+-- Maestro de niveles (antes campo INT libre en Diccionario)
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [04] NivelesDificultad...';
+GO
+
+CREATE TABLE NivelesDificultad (
+    IdNivel             INT IDENTITY(1,1) PRIMARY KEY,
+    NombreNivel         NVARCHAR(50)    NOT NULL,    -- 'Clasificado', 'Secreto', 'Ultra Secreto'
+    Descripcion         NVARCHAR(255)   NULL,
+    MultiplicadorPuntos DECIMAL(3,2)    DEFAULT 1.00, -- Bonus de dificultad
+    ColorTema           NVARCHAR(20)    NULL,        -- Color UI para este nivel
+
+    CONSTRAINT UQ_Niveles_Nombre UNIQUE (NombreNivel),
+    CONSTRAINT CK_Niveles_Multiplicador CHECK (MultiplicadorPuntos > 0)
+);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- CAPA 2: NÚCLEO DE CONTENIDO (4 tablas)
+-- El corazón del aprendizaje: diccionario, frases, flashcards
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [05] DICCIONARIO  ← MODIFICADA (Recomendaciones #1 y #2 aplicadas)
+-- Mapeo de caracteres originales, fonética/Pinyin y traducción
+-- CAMBIOS: Categoria NVARCHAR → IdCategoria INT (FK)
+--          NivelDificultad INT → IdNivel INT (FK)
+--          NUEVO: AudioUrl para pronunciaciones (Recomendación #4)
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [05] Diccionario...';
+GO
+CREATE TABLE dbo.Diccionario ( 
+    IdItem              INT IDENTITY(1,1) PRIMARY KEY, 
+    IdIdioma            INT             NOT NULL, 
+    IdCategoria         INT             NULL,        -- ← ANTES: Categoria NVARCHAR(100) 
+    IdNivel             INT             NULL,        -- ← ANTES: NivelDificultad INT 
+    CaracterOriginal    NVARCHAR(255)   NOT NULL,    -- Cirílico o Hanzi 
+    LecturaAyuda        NVARCHAR(255)   NULL,        -- Fonética o Pinyin 
+    TraduccionEspanol   NVARCHAR(255)   NOT NULL, 
+    AudioUrl            NVARCHAR(500)   NULL,        -- ← NUEVO: URL de pronunciación (Rec. #4) 
+    NotasContexto       NVARCHAR(500)   NULL,        -- Uso contextual 
+    FechaCreacion       DATETIME2       DEFAULT GETDATE(), 
+    Activo              BIT             DEFAULT 1,
+
+    -- Foreign Keys
+    CONSTRAINT FK_Diccionario_Idioma FOREIGN KEY (IdIdioma) 
+        REFERENCES dbo.Idiomas(IdIdioma) ON DELETE CASCADE,
+    CONSTRAINT FK_Diccionario_Categoria FOREIGN KEY (IdCategoria) 
+        REFERENCES dbo.Categorias(IdCategoria) ON DELETE SET NULL,
+    CONSTRAINT FK_Diccionario_Nivel FOREIGN KEY (IdNivel) 
+        REFERENCES dbo.NivelesDificultad(IdNivel) ON DELETE SET NULL,
+
+    -- Índices estratégicos (Recomendación #3)
+); 
+GO
+
+CREATE NONCLUSTERED INDEX IX_Diccionario_IdIdioma_IdCategoria ON dbo.Diccionario(IdIdioma, IdCategoria);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Diccionario_IdNivel ON dbo.Diccionario(IdNivel);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Diccionario_Activo_IdIdioma ON dbo.Diccionario(Activo, IdIdioma);
+GO
+
+-- Índice adicional para búsqueda por caracteres (especialmente importante para Hanzi)
+CREATE NONCLUSTERED INDEX IX_Diccionario_CaracterOriginal ON dbo.Diccionario(CaracterOriginal);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [06] FRASES
+-- Para el Modo Infiltración: desafíos de completado tipo ahorcado
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [06] Frases...';
+GO
+
+CREATE TABLE Frases (
+    IdFrase             INT IDENTITY(1,1) PRIMARY KEY,
+    IdIdioma            INT             NOT NULL,
+    IdNivel             INT             NULL,
+    FraseOriginal       NVARCHAR(500)   NOT NULL,    -- Frase completa en idioma objetivo
+    TraduccionEspanol   NVARCHAR(500)   NOT NULL,
+    Pista               NVARCHAR(255)   NULL,        -- Pista para el modo ahorcado
+    LetrasOcultas       INT             NULL,        -- Cuántas letras se ocultan
+    TiempoLimiteSeg     INT             DEFAULT 60,  -- Segundos para resolver
+
+    CONSTRAINT FK_Frases_Idioma FOREIGN KEY (IdIdioma) 
+        REFERENCES Idiomas(IdIdioma) ON DELETE CASCADE,
+    CONSTRAINT FK_Frases_Nivel FOREIGN KEY (IdNivel) 
+        REFERENCES NivelesDificultad(IdNivel) ON DELETE SET NULL,
+
+    -- Índices (Recomendación #3)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Frases_IdIdioma_IdNivel ON dbo.Frases(IdIdioma, IdNivel);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Frases_LetrasOcultas ON dbo.Frases(LetrasOcultas);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [07] MAZOS DE FLASHCARDS
+-- Grupos temáticos de fichas bibliográficas digitales
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [07] MazosFlashcards...';
+GO
+
+CREATE TABLE MazosFlashcards (
+    IdMazo          INT IDENTITY(1,1) PRIMARY KEY,
+    IdIdioma        INT             NOT NULL,
+    IdCategoria     INT             NULL,
+    IdNivel         INT             NULL,
+    NombreMazo      NVARCHAR(100)   NOT NULL,        -- 'Vocabulario Básico', 'Código Rojo'
+    Descripcion     NVARCHAR(255)   NULL,
+    ImagenPortada   NVARCHAR(500)   NULL,            -- URL imagen del mazo
+    OrdenVisual     INT             DEFAULT 0,
+    Activo          BIT             DEFAULT 1,
+
+    CONSTRAINT FK_Mazos_Idioma FOREIGN KEY (IdIdioma) 
+        REFERENCES Idiomas(IdIdioma) ON DELETE CASCADE,
+    CONSTRAINT FK_Mazos_Categoria FOREIGN KEY (IdCategoria) 
+        REFERENCES Categorias(IdCategoria) ON DELETE SET NULL,
+    CONSTRAINT FK_Mazos_Nivel FOREIGN KEY (IdNivel) 
+        REFERENCES NivelesDificultad(IdNivel) ON DELETE SET NULL,
+
+    -- Índices (Recomendación #3)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Mazos_IdIdioma_IdNivel ON dbo.MazosFlashcards(IdIdioma, IdNivel);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Mazos_Activo ON dbo.MazosFlashcards(Activo);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [08] FLASHCARDS
+-- Fichas individuales que rotan 180° mostrando significado y fonética
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [08] Flashcards...';
+GO
+
+CREATE TABLE Flashcards (
+    IdFlashcard     INT IDENTITY(1,1) PRIMARY KEY,
+    IdMazo          INT             NOT NULL,
+    IdItem          INT             NOT NULL,        -- Relación con Diccionario
+    OrdenEnMazo     INT             DEFAULT 0,
+    CaraFrontal     NVARCHAR(500)   NULL,            -- Lo que se muestra inicialmente
+    CaraTrasera     NVARCHAR(500)   NULL,            -- Significado + fonética (la que "rota")
+    TipoFlashcard   NVARCHAR(20)    DEFAULT 'NORMAL', -- 'NORMAL', 'DESAFIO', 'BONUS'
+
+    CONSTRAINT FK_Flashcards_Mazo FOREIGN KEY (IdMazo) 
+        REFERENCES MazosFlashcards(IdMazo) ON DELETE CASCADE,
+    CONSTRAINT FK_Flashcards_Item FOREIGN KEY (IdItem) 
+        REFERENCES Diccionario(IdItem) ON DELETE NO ACTION,
+
+    -- Índices (Recomendación #3)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Flashcards_IdMazo_Orden ON dbo.Flashcards(IdMazo, OrdenEnMazo);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Flashcards_IdItem ON dbo.Flashcards(IdItem);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- CAPA 3: USUARIOS Y CONFIGURACIÓN (4 tablas)
+-- Gestión de soldados, preferencias y registro de alistamiento
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [09] USUARIOS (Soldados)
+-- Control de vidas, racha diaria y rangos militares
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [09] Usuarios...';
+GO
+
+CREATE TABLE Usuarios (
+    IdUsuario           INT IDENTITY(1,1) PRIMARY KEY,
+    IdRango             INT             DEFAULT 1,
+    IdIdiomaPreferido   INT             NULL,
+    NombreClave         NVARCHAR(100)   NOT NULL,    -- Username único estilo militar
+    HashContrasena      NVARCHAR(255)   NOT NULL,    -- BCrypt/Argon2 hash
+    VidasActuales       INT             DEFAULT 5,
+    RachaDias           INT             DEFAULT 0,
+    PuntosTotales       INT             DEFAULT 0,   -- XP acumulado
+    UltimaConexion      DATETIME2       DEFAULT GETDATE(),
+    FechaRegistro       DATETIME2       DEFAULT GETDATE(),
+    EstadoCuenta        NVARCHAR(20)    DEFAULT 'ACTIVA', -- 'ACTIVA', 'SUSPENDIDA', 'BAJA'
+
+    -- Foreign Keys
+    CONSTRAINT FK_Usuarios_Rango FOREIGN KEY (IdRango) 
+        REFERENCES Rangos(IdRango) ON DELETE SET DEFAULT,
+    CONSTRAINT FK_Usuarios_Idioma FOREIGN KEY (IdIdiomaPreferido) 
+        REFERENCES Idiomas(IdIdioma) ON DELETE SET NULL,
+
+    -- Constraints
+    CONSTRAINT UQ_Usuarios_NombreClave UNIQUE (NombreClave),
+    CONSTRAINT CK_Usuarios_Vidas CHECK (VidasActuales >= 0 AND VidasActuales <= 5),
+    CONSTRAINT CK_Usuarios_Racha CHECK (RachaDias >= 0),
+
+    -- Índices (Recomendación #3)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Usuarios_NombreClave ON dbo.Usuarios(NombreClave);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Usuarios_IdRango ON dbo.Usuarios(IdRango);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Usuarios_IdIdiomaPreferido ON dbo.Usuarios(IdIdiomaPreferido);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Usuarios_UltimaConexion ON dbo.Usuarios(UltimaConexion);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [10] CONFIGURACIÓN DE USUARIO
+-- Audio, visuales, estética y preferencias del soldado
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [10] ConfiguracionUsuario...';
+GO
+
+CREATE TABLE ConfiguracionUsuario (
+    IdConfiguracion         INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario               INT             NOT NULL UNIQUE, -- 1:1 con Usuarios
+    SonidoActivado          BIT             DEFAULT 1,
+    EfectosVisuales         BIT             DEFAULT 1,       -- Glitches, sombras
+    TemaVisual              NVARCHAR(50)    DEFAULT 'terminal_verde', -- 'papel_envejecido', 'soviet_style'
+    VolumenGeneral          INT             DEFAULT 80,
+    NotificacionesActivadas BIT             DEFAULT 1,
+    AnimacionesReducidas    BIT             DEFAULT 0,       -- Accesibilidad
+    ModoDaltonico           BIT             DEFAULT 0,       -- Accesibilidad
+
+    CONSTRAINT FK_Config_Usuario FOREIGN KEY (IdUsuario) 
+        REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+
+    -- Constraints
+    CONSTRAINT CK_Config_Volumen CHECK (VolumenGeneral >= 0 AND VolumenGeneral <= 100),
+
+    -- Índices
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Config_TemaVisual ON dbo.ConfiguracionUsuario(TemaVisual);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [11] REGISTROS DE ALISTAMIENTO
+-- Formulario que emula papel físico envejecido
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [11] RegistrosAlistamiento...';
+GO
+
+CREATE TABLE RegistrosAlistamiento (
+    IdRegistro          INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario           INT             NOT NULL,
+    NombreCompleto      NVARCHAR(200)   NULL,        -- Nombre real (opcional)
+    FrecuenciaContacto  NVARCHAR(100)   NULL,        -- 'Diaria', 'Semanal', 'Intensiva'
+    FechaAlistamiento   DATE            DEFAULT GETDATE(),
+    FrenteAsignado      NVARCHAR(100)   NULL,        -- 'Frente Oriental', 'Frente Occidental'
+    EstadoAprobacion    BIT             DEFAULT 1,   -- 1 = sello "APROBADO"
+    CodigoAlistamiento  NVARCHAR(20)    NULL UNIQUE, -- Código tipo "AL-270-001"
+
+    CONSTRAINT FK_Registro_Usuario FOREIGN KEY (IdUsuario) 
+        REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+
+    -- Índices (Recomendación #3)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Registros_IdUsuario ON dbo.RegistrosAlistamiento(IdUsuario);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Registros_FechaAlistamiento ON dbo.RegistrosAlistamiento(FechaAlistamiento);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [12] LOGROS / INSIGNIAS MILITARES
+-- Sistema de gamificación con condiciones de desbloqueo
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [12] Logros...';
+GO
+
+CREATE TABLE Logros (
+    IdLogro             INT IDENTITY(1,1) PRIMARY KEY,
+    NombreLogro         NVARCHAR(100)   NOT NULL,    -- 'Superviviente', 'Francotirador Lingüístico'
+    Descripcion         NVARCHAR(255)   NULL,
+    Icono               NVARCHAR(50)    NULL,        -- Emoji o código de icono
+    CondicionDesbloqueo NVARCHAR(255)   NULL,        -- Descripción legible de la condición
+    CodigoCondicion     NVARCHAR(50)    NULL,        -- Código programable: 'FLASH_10_PERFECT', 'RACHA_7'
+    PuntosRecompensa    INT             DEFAULT 0,
+    Secreto             BIT             DEFAULT 0,   -- Logro oculto hasta desbloquear
+
+    CONSTRAINT UQ_Logros_Nombre UNIQUE (NombreLogro),
+
+    -- Índices
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Logros_CodigoCondicion ON dbo.Logros(CodigoCondicion);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- CAPA 4: TRANSACCIONES Y SEGUIMIENTO (4 tablas)
+-- Registro de actividad: sesiones, errores, desafíos, game overs
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [13] SESIONES DE ENTRENAMIENTO
+-- Tracking del ciclo de vida del "Soldado" durante cada sesión
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [13] SesionesEntrenamiento...';
+GO
+
+CREATE TABLE SesionesEntrenamiento (
+    IdSesion        INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario       INT             NOT NULL,
+    FechaInicio     DATETIME2       DEFAULT GETDATE(),
+    FechaFin        DATETIME2       NULL,
+    VidasInicio     INT             DEFAULT 5,
+    VidasFinal      INT             NULL,
+    PuntajeTotal    INT             DEFAULT 0,
+    EstadoSesion    NVARCHAR(20)    DEFAULT 'ACTIVA', -- 'ACTIVA', 'COMPLETADA', 'GAME_OVER', 'ABANDONADA'
+    ModoJuego       NVARCHAR(20)    DEFAULT 'FLASHCARDS', -- 'FLASHCARDS', 'INFILTRACION', 'MIXTO'
+    TiempoTotalSeg  INT             DEFAULT 0,       -- Duración en segundos
+
+    CONSTRAINT FK_Sesiones_Usuario FOREIGN KEY (IdUsuario) 
+        REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+
+    CONSTRAINT CK_Sesiones_VidasInicio CHECK (VidasInicio >= 0 AND VidasInicio <= 5),
+    CONSTRAINT CK_Sesiones_Estado CHECK (EstadoSesion IN ('ACTIVA', 'COMPLETADA', 'GAME_OVER', 'ABANDONADA')),
+
+    -- Índices CRÍTICOS (Recomendación #3)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Sesiones_IdUsuario_FechaInicio ON dbo.SesionesEntrenamiento(IdUsuario, FechaInicio);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Sesiones_Estado ON dbo.SesionesEntrenamiento(EstadoSesion);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Sesiones_FechaInicio ON dbo.SesionesEntrenamiento(FechaInicio);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [14] DESAFÍOS DE INFILTRACIÓN
+-- Instancias del modo ahorcado (completado de frases)
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [14] DesafiosInfiltracion...';
+GO
+
+CREATE TABLE DesafiosInfiltracion (
+    IdDesafio           INT IDENTITY(1,1) PRIMARY KEY,
+    IdSesion            INT             NOT NULL,
+    IdFrase             INT             NOT NULL,
+    IntentosRealizados  INT             DEFAULT 0,
+    IntentosMaximos     INT             DEFAULT 3,
+    Completado          BIT             DEFAULT 0,
+    FechaDesafio        DATETIME2       DEFAULT GETDATE(),
+    TiempoResolucionSeg INT             NULL,        -- Cuánto tardó en resolver
+    PuntosObtenidos     INT             DEFAULT 0,
+
+    CONSTRAINT FK_Desafios_Sesion FOREIGN KEY (IdSesion) 
+        REFERENCES SesionesEntrenamiento(IdSesion) ON DELETE CASCADE,
+    CONSTRAINT FK_Desafios_Frase FOREIGN KEY (IdFrase) 
+        REFERENCES Frases(IdFrase) ON DELETE CASCADE,
+
+    -- Índices
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Desafios_IdSesion_Completado ON dbo.DesafiosInfiltracion(IdSesion, Completado);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Desafios_IdFrase ON dbo.DesafiosInfiltracion(IdFrase);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [15] HISTORIAL DE ERRORES
+-- Algoritmo de repetición espaciada basado en fallos
+-- ÍNDICES CRÍTICOS para optimizar la repetición espaciada (Recomendación #3)
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [15] HistorialErrores...';
+GO
+
+CREATE TABLE HistorialErrores (
+    IdError             INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario           INT             NOT NULL,
+    IdItem              INT             NOT NULL,
+    FechaFallo          DATETIME2       DEFAULT GETDATE(),
+    IntentosFallidos    INT             DEFAULT 1,
+    TipoError           NVARCHAR(50)    NULL,        -- 'PRONUNCIACION', 'TRADUCCION', 'ESCRITURA'
+    Contexto            NVARCHAR(255)   NULL,        -- En qué modo ocurrió
+    Revisado            BIT             DEFAULT 0,   -- Marcado como "ya practicado"
+
+    CONSTRAINT FK_Errores_Usuario FOREIGN KEY (IdUsuario) 
+        REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+    CONSTRAINT FK_Errores_Item FOREIGN KEY (IdItem) 
+        REFERENCES Diccionario(IdItem) ON DELETE CASCADE,
+
+    -- Índices CRÍTICOS para repetición espaciada (Recomendación #3)
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Errores_IdUsuario_FechaFallo ON dbo.HistorialErrores(IdUsuario, FechaFallo);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Errores_IdItem_FechaFallo ON dbo.HistorialErrores(IdItem, FechaFallo);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Errores_IdUsuario_IdItem ON dbo.HistorialErrores(IdUsuario, IdItem);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Errores_Revisado ON dbo.HistorialErrores(Revisado, FechaFallo);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [16] HISTORIAL GAME OVER
+-- Registro de "muertes" del personaje (blackout de 3 segundos)
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [16] HistorialGameOver...';
+GO
+
+CREATE TABLE HistorialGameOver (
+    IdGameOver      INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario       INT             NOT NULL,
+    IdSesion        INT             NULL,            -- Puede ser NULL si muere fuera de sesión
+    FechaGameOver   DATETIME2       DEFAULT GETDATE(),
+    CausaMuerte     NVARCHAR(100)   NULL,            -- 'Vidas agotadas', 'Tiempo expirado', 'Deserción'
+    ProgresoPerdido INT             DEFAULT 0,       -- Puntos o progreso de sesión borrados
+    MensajeFinal    NVARCHAR(255)   NULL,            -- Mensaje dramático tipo "MISIÓN FALLIDA"
+
+    CONSTRAINT FK_GO_Usuario FOREIGN KEY (IdUsuario) 
+        REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+    CONSTRAINT FK_GO_Sesion FOREIGN KEY (IdSesion) 
+        REFERENCES SesionesEntrenamiento(IdSesion) ON DELETE NO ACTION,
+
+    -- Índices
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_GO_IdUsuario_Fecha ON dbo.HistorialGameOver(IdUsuario, FechaGameOver);
+GO
+
+CREATE NONCLUSTERED INDEX IX_GO_IdSesion ON dbo.HistorialGameOver(IdSesion);
+GO
+
+CREATE NONCLUSTERED INDEX IX_GO_CausaMuerte ON dbo.HistorialGameOver(CausaMuerte);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- CAPA 5: PROGRESO Y ESTADÍSTICAS (4 tablas)
+-- Seguimiento del desempeño del soldado
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [17] PROGRESO POR FLASHCARD
+-- Relación Usuario-Flashcard: cuáles ha visto, cuáles domina
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [17] ProgresoFlashcards...';
+GO
+
+CREATE TABLE ProgresoFlashcards (
+    IdProgreso          INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario           INT             NOT NULL,
+    IdFlashcard         INT             NOT NULL,
+    VecesVista          INT             DEFAULT 0,
+    VecesAcertada       INT             DEFAULT 0,
+    VecesFallada        INT             DEFAULT 0,
+    UltimaRevision      DATETIME2       NULL,
+    Dominada            BIT             DEFAULT 0,   -- Ya no aparece en repasos
+    NivelConfianza      INT             DEFAULT 0,   -- 0-100, para algoritmo SM-2
+    ProximaRevision     DATETIME2       NULL,        -- Para repetición espaciada
+
+    CONSTRAINT FK_Progreso_Usuario FOREIGN KEY (IdUsuario) 
+        REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+    CONSTRAINT FK_Progreso_Flashcard FOREIGN KEY (IdFlashcard) 
+        REFERENCES Flashcards(IdFlashcard) ON DELETE CASCADE,
+
+    CONSTRAINT UQ_Progreso_Usuario_Flashcard UNIQUE (IdUsuario, IdFlashcard),
+
+    -- Índices
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Progreso_IdUsuario_Dominada ON dbo.ProgresoFlashcards(IdUsuario, Dominada);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Progreso_ProximaRevision ON dbo.ProgresoFlashcards(ProximaRevision);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Progreso_IdFlashcard ON dbo.ProgresoFlashcards(IdFlashcard);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [18] LOGROS POR USUARIO
+-- Insignias desbloqueadas por cada soldado
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [18] UsuarioLogros...';
+GO
+
+CREATE TABLE UsuarioLogros (
+    IdUsuarioLogro  INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario       INT             NOT NULL,
+    IdLogro         INT             NOT NULL,
+    FechaDesbloqueo DATETIME2       DEFAULT GETDATE(),
+    Notificado      BIT             DEFAULT 0,       -- Ya se mostró la animación de desbloqueo
+
+    CONSTRAINT FK_UL_Usuario FOREIGN KEY (IdUsuario) 
+        REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+    CONSTRAINT FK_UL_Logro FOREIGN KEY (IdLogro) 
+        REFERENCES Logros(IdLogro) ON DELETE CASCADE,
+
+    CONSTRAINT UQ_UsuarioLogros_Usuario_Logro UNIQUE (IdUsuario, IdLogro),
+
+    -- Índices
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_UL_IdUsuario ON dbo.UsuarioLogros(IdUsuario);
+GO
+
+CREATE NONCLUSTERED INDEX IX_UL_IdLogro ON dbo.UsuarioLogros(IdLogro);
+GO
+
+CREATE NONCLUSTERED INDEX IX_UL_FechaDesbloqueo ON dbo.UsuarioLogros(FechaDesbloqueo);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [19] RACHA DIARIA DETALLADA
+-- Tracking día a día para el sistema de rachas
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [19] RachaDiaria...';
+GO
+
+CREATE TABLE RachaDiaria (
+    IdRacha                 INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario               INT             NOT NULL,
+    Fecha                   DATE            NOT NULL,
+    EntrenamientoCompletado BIT             DEFAULT 0,
+    PuntosDelDia            INT             DEFAULT 0,
+    MinutosEntrenados       INT             DEFAULT 0,
+    FlashcardsRevisadas     INT             DEFAULT 0,
+    DesafiosCompletados     INT             DEFAULT 0,
+
+    CONSTRAINT FK_Racha_Usuario FOREIGN KEY (IdUsuario) 
+        REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+
+    CONSTRAINT UQ_Racha_Usuario_Fecha UNIQUE (IdUsuario, Fecha),
+
+    -- Índices
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Racha_IdUsuario_Fecha ON dbo.RachaDiaria(IdUsuario, Fecha);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Racha_IdUsuario_Completado ON dbo.RachaDiaria(IdUsuario, EntrenamientoCompletado);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- [20] ESTADÍSTICAS GENERALES
+-- Dashboard resumido del soldado (tabla resumen para performance)
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> CREANDO TABLA [20] Estadisticas...';
+GO
+
+CREATE TABLE Estadisticas (
+    IdEstadistica               INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario                   INT             NOT NULL UNIQUE, -- 1:1 con Usuarios
+    TotalFlashcardsVistas       INT             DEFAULT 0,
+    TotalAciertos               INT             DEFAULT 0,
+    TotalFallos                 INT             DEFAULT 0,
+    TotalSesiones               INT             DEFAULT 0,
+    TotalGameOvers              INT             DEFAULT 0,
+    MejorRacha                  INT             DEFAULT 0,       -- Mayor racha alcanzada
+    TiempoTotalEntrenamiento    INT             DEFAULT 0,       -- En minutos
+    PrecisionPromedio           DECIMAL(5,2)    DEFAULT 0.00,    -- Porcentaje 0-100
+    PalabrasDominadas           INT             DEFAULT 0,
+    NivelActual                 INT             DEFAULT 1,       -- Nivel calculado del usuario
+    UltimaActualizacion         DATETIME2       DEFAULT GETDATE(),
+
+    CONSTRAINT FK_Estad_Usuario FOREIGN KEY (IdUsuario) 
+        REFERENCES Usuarios(IdUsuario) ON DELETE CASCADE,
+
+    CONSTRAINT CK_Estad_Precision CHECK (PrecisionPromedio >= 0 AND PrecisionPromedio <= 100),
+
+    -- Índices
+);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Estad_IdUsuario ON dbo.Estadisticas(IdUsuario);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Estad_PrecisionPromedio ON dbo.Estadisticas(PrecisionPromedio);
+GO
+
+CREATE NONCLUSTERED INDEX IX_Estad_NivelActual ON dbo.Estadisticas(NivelActual);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- DATOS INICIALES (SEED)
+-- ═══════════════════════════════════════════════════════════════════════════════
+PRINT '>>> INSERTANDO DATOS INICIALES...';
+GO
+
+-- Idiomas
+INSERT INTO Idiomas (Nombre, CodigoISO, EsteticaVisual) VALUES 
+    (N'Ruso', 'RU', 'soviet_style.css'),
+    (N'Mandarín', 'ZH', 'dynasty_style.css');
+GO
+
+-- Rangos militares
+INSERT INTO Rangos (NombreRango, NivelRequerido, IconoMilitar, Descripcion) VALUES 
+    ('Recluta', 1, '🎖️', 'Recién llegado al programa'),
+    ('Operador', 5, '🔫', 'Capaz de manejar situaciones básicas'),
+    ('Espía', 10, '🕵️', 'Infiltración en territorio hostil'),
+    ('Aliado de Élite', 20, '🛡️', 'Máximo nivel de confianza');
+GO
+
+-- Categorías de vocabulario
+INSERT INTO Categorias (NombreCategoria, Descripcion, IconoMilitar, OrdenVisual) VALUES 
+    ('Militar', 'Vocabulario táctico y de campo', '🔫', 1),
+    ('Supervivencia', 'Frases para situaciones extremas', '🛡️', 2),
+    ('Slang', 'Expresiones coloquiales', '💬', 3),
+    ('General', 'Vocabulario cotidiano', '📚', 4),
+    ('Contrainteligencia', 'Términos de espionaje', '🕵️', 5);
+GO
+
+-- Niveles de dificultad
+INSERT INTO NivelesDificultad (NombreNivel, Descripcion, MultiplicadorPuntos, ColorTema) VALUES 
+    ('Clasificado', 'Nivel básico de acceso', 1.00, '#4a7c59'),
+    ('Secreto', 'Requiere preparación previa', 1.50, '#d4a017'),
+    ('Ultra Secreto', 'Máxima dificultad', 2.50, '#8b0000');
+GO
+
+-- Diccionario de prueba (con nuevos FKs y AudioUrl)
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, AudioUrl) VALUES
+    (1, 1, 1, N'багаж', N'Bagash', N'Equipaje', 'https://audio.operacionbabel.ru/bagash.mp3'),
+    (1, 1, 2, N'оружие', N'Oruzhiye', N'Arma', 'https://audio.operacionbabel.ru/oruzhiye.mp3'),
+    (1, 4, 1, N'книга', N'Kniga', N'Libro', 'https://audio.operacionbabel.ru/kniga.mp3'),
+    (2, 4, 1, N'书', N'Shū', N'Libro', 'https://audio.operacionbabel.ru/shu.mp3'),
+    (2, 1, 2, N'武器', N'Wǔqì', N'Arma', 'https://audio.operacionbabel.ru/wuqi.mp3');
+GO
+
+-- Frases de prueba
+INSERT INTO Frases (IdIdioma, IdNivel, FraseOriginal, TraduccionEspanol, Pista, LetrasOcultas, TiempoLimiteSeg) VALUES
+    (1, 1, N'Я читаю книгу', N'Yo leo un libro', N'Acción cotidiana con objeto de papel', 3, 45),
+    (2, 1, N'我在看书', N'Yo estoy leyendo', N'Acción de lectura en progreso', 2, 60);
+GO
+
+-- Logros de prueba
+INSERT INTO Logros (NombreLogro, Descripcion, Icono, CondicionDesbloqueo, CodigoCondicion, PuntosRecompensa, Secreto) VALUES
+    ('Primera Sangre', 'Completar tu primera flashcard', '🩸', 'Completar 1 flashcard', 'FLASH_1', 10, 0),
+    ('Superviviente', 'Sobrevivir 7 días consecutivos', '🏕️', 'Racha de 7 días', 'RACHA_7', 100, 0),
+    ('Francotirador', '10 aciertos seguidos sin fallos', '🎯', '10 aciertos consecutivos', 'STREAK_10', 50, 0),
+    ('Agente Encubierto', 'Desbloquear modo infiltración', '🕵️', 'Completar 5 frases', 'FRASE_5', 75, 1);
+GO
+
+PRINT '>>> BASE DE DATOS OPERACION_BABEL INICIALIZADA CORRECTAMENTE';
+PRINT '>>> TOTAL DE TABLAS CREADAS: 20';
+PRINT '>>> RECOMENDACIONES APLICADAS: 4/4';
+GO

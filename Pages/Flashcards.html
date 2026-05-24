@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrenamiento Táctico - Operación Babel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../Css Babel/Flashcards.css">
+    <script src="../Js babel/Flashcard.js" defer></script>
+</head>
+<body>
+    <div class="spotlight"></div>
+    <div class="fog-container"></div>
+
+    <header>
+        <div class="menu-icon" id="menuBtn">
+            <i class="bi bi-list fs-2"></i>
+        </div>
+        <a class="brand-container" href="../Babelhome.html" aria-label="Volver al inicio">
+            <i class="bi bi-shield-lock fs-3"></i><br>
+            <span>Base de Operaciones Babel</span>
+        </a>
+        <div class="user-icon">
+            <i class="bi bi-person-badge fs-3"></i>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="bi bi-shield-lock fs-2"></i>
+            <span>MENÚ TÁCTICO</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="../Babelhome.html"><i class="bi bi-house-door"></i> Cuartel General</a></li>
+            <li><a href="Mazos.html"><i class="bi bi-stack"></i> Armería de Mazos</a></li>
+            <li><a href="Ahorcado.html"><i class="bi bi-crosshair2"></i> Modo Infiltración</a></li>
+            <li><a href="Enlistamiento.html"><i class="bi bi-file-earmark-text"></i> Registro de Reclutas</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="soldier-status">
+                <div class="status-top">
+                    <i class="bi bi-heart-pulse"></i>
+                    <span class="status-label">Integridad</span>
+                </div>
+                <div class="lives-bar">
+                    <div class="life active" data-life="1"></div>
+                    <div class="life active" data-life="2"></div>
+                    <div class="life active" data-life="3"></div>
+                    <div class="life active" data-life="4"></div>
+                    <div class="life active" data-life="5"></div>
+                </div>
+            </div>
+            <div class="rank-display">
+                <i class="bi bi-award rank-icon"></i>
+                <span class="rank-name">Recluta</span>
+            </div>
+        </div>
+    </nav>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <main class="main-content">
+        <section class="page-hero" data-hero>
+            <!-- Info del mazo activo -->
+            <div class="mission-info-bar">
+                <div class="mission-title">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                    <span id="mazoNombre">Cargando arsenal...</span>
+                </div>
+                <div class="mission-progress">
+                    <span id="currentCard">0</span> / <span id="totalCards">0</span>
+                </div>
+            </div>
+
+            <!-- Barra de progreso -->
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <button class="scroll-btn" id="heroScrollButton">
+                <i class="bi bi-chevron-double-down"></i>
+            </button>
+        </section>
+
+        <section class="page-mission" data-mission>
+            <!-- Área de la flashcard -->
+            <div class="flashcard-area">
+                <div class="flashcard-container" id="flashcardContainer">
+                    <div class="flashcard" id="flashcard">
+                        <!-- Cara frontal -->
+                        <div class="flashcard-face front" id="cardFront">
+                            <div class="card-badge idioma-badge" id="idiomaBadge">RU</div>
+                            <div class="card-content">
+                                <div class="card-icon" id="cardIcon"><i class="bi bi-journal"></i></div>
+                                <h2 class="card-word" id="cardWord">Cargando...</h2>
+                                <p class="card-hint">Haga clic para revelar inteligencia</p>
+                            </div>
+                            <div class="card-footer">
+                                <span class="difficulty-tag" id="difficultyTag">CLASIFICADO</span>
+                            </div>
+                        </div>
+
+                        <!-- Cara trasera -->
+                        <div class="flashcard-face back" id="cardBack">
+                            <div class="card-badge answer-badge">TRADUCCIÓN</div>
+                            <div class="card-content">
+                                <h2 class="card-translation" id="cardTranslation">...</h2>
+                                <div class="pronunciation-box">
+                                    <i class="bi bi-mic-fill"></i>
+                                    <span id="cardPronunciation">...</span>
+                                </div>
+                                <div class="context-box" id="contextBox">
+                                    <i class="bi bi-info-circle"></i>
+                                    <span id="cardContext">...</span>
+                                </div>
+                            </div>
+                            <div class="card-footer back-footer">
+                                <span class="category-tag" id="categoryTag">General</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controles -->
+                <div class="controls-area">
+                    <button class="control-btn btn-fail" id="btnFail" title="No dominado (resta vida)">
+                        <i class="bi bi-x-lg"></i>
+                        <span>NO DOMINADO</span>
+                    </button>
+
+                    <button class="control-btn btn-flip" id="btnFlip" title="Voltear tarjeta">
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>VOLTEAR</span>
+                    </button>
+
+                    <button class="control-btn btn-success" id="btnSuccess" title="Dominado">
+                        <i class="bi bi-check-lg"></i>
+                        <span>DOMINADO</span>
+                    </button>
+                </div>
+
+                <!-- Indicadores de estado -->
+                <div class="status-indicators">
+                    <div class="status-item" id="statusDominadas">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span id="countDominadas">0</span>
+                    </div>
+                    <div class="status-item" id="statusPendientes">
+                        <i class="bi bi-circle"></i>
+                        <span id="countPendientes">0</span>
+                    </div>
+                    <div class="status-item" id="statusFalladas">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span id="countFalladas">0</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Game Over -->
+    <div class="gameover-modal" id="gameOverModal">
+        <div class="gameover-content">
+            <div class="gameover-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <h2>MISIÓN FALLIDA</h2>
+            <p>Ha perdido todas sus vidas. El entrenamiento ha sido abortado.</p>
+            <div class="gameover-stats">
+                <div class="go-stat">
+                    <span class="go-stat-value" id="goDominadas">0</span>
+                    <span class="go-stat-label">Dominadas</span>
+                </div>
+                <div class="go-stat">
+                    <span class="go-stat-value" id="goFalladas">0</span>
+                    <span class="go-stat-label">Falladas</span>
+                </div>
+            </div>
+            <button class="btn-retry" id="btnRetry">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                REINTENTAR MISIÓN
+            </button>
+            <button class="btn-exit" id="btnExit">
+                <i class="bi bi-box-arrow-left"></i>
+                RETIRADA AL CUARTEL
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Misión Completada -->
+    <div class="victory-modal" id="victoryModal">
+        <div class="victory-content">
+            <div class="victory-stamp">MISIÓN CUMPLIDA</div>
+            <div class="victory-icon"><i class="bi bi-trophy"></i></div>
+            <h2>ENTRENAMIENTO COMPLETADO</h2>
+            <p>Excelente trabajo, soldado. Ha dominado todo el arsenal.</p>
+            <div class="victory-stats">
+                <div class="vic-stat">
+                    <span class="vic-stat-value" id="vicPrecision">0%</span>
+                    <span class="vic-stat-label">Precisión</span>
+                </div>
+                <div class="vic-stat">
+                    <span class="vic-stat-value" id="vicVidas">0</span>
+                    <span class="vic-stat-label">Vidas Restantes</span>
+                </div>
+            </div>
+            <button class="btn-victory" id="btnVictoryExit">
+                <i class="bi bi-trophy"></i>
+                REGRESAR AL CUARTEL
+            </button>
+        </div>
+    </div>
+
+    <!-- Efecto de daño -->
+    <div class="damage-effect" id="damageEffect"></div>
+
+    <footer>
+        <div class="footer-line">DATOS DE INTELIGENCIA:</div>
+        <div class="footer-line">Desarrollado por <span class="highlight">Akir (Maria Fernanda P.)</span></div>
+        <div class="footer-line">Desarrollado por <span class="highlight">Mauo (David Mauricio P.)</span></div>
+        <div class="footer-line">División de Ingeniería de Babel</div>
+        <div class="footer-line">Protocolo: Encriptación de datos nivel militar</div>
+        <div class="footer-line mt-3">&copy; 2026: Todos los derechos reservados bajo la jurisdicción de la Alianza Babel</div>
+    </footer>
+
+    <button class="scroll-top-btn" id="scrollTopButton" aria-label="Volver arriba">
+        <i class="bi bi-chevron-double-up"></i>
+    </button>
+</body>
+</html>
