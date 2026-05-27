@@ -1,9 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════
    AHORCADO.JS - Modo Infiltración de Operación Babel
-   Juego del ahorcado con palabras en ruso y chino
    ═══════════════════════════════════════════════════════════════ */
 
-// Banco de palabras por nivel (simulando datos de BD)
+// Banco de palabras por nivel
 const palabrasData = [
     // Nivel 1 - Clasificado (Fácil)
     [
@@ -34,7 +33,6 @@ const palabrasData = [
     ]
 ];
 
-// Partes del ahorcado en orden de aparición
 const partesAhorcado = [
     'part-head',
     'part-body', 
@@ -44,7 +42,6 @@ const partesAhorcado = [
     'part-leg-right'
 ];
 
-// Estado del juego
 let gameState = {
     nivel: 0,
     palabraActual: '',
@@ -65,13 +62,13 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarSidebar();
     inicializarTeclado();
     inicializarModales();
-    inicializarScrollTop();
+    inicializarScrollBehavior();
     iniciarNivel();
 });
 
-// ═══════════════════════════════════════════════════════════════
-// SIDEBAR
-// ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR - IGUAL QUE BABELHOME (con body.sidebar-active)
+   ═══════════════════════════════════════════════════════════════ */
 function inicializarSidebar() {
     const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.getElementById('sidebar');
@@ -85,19 +82,23 @@ function inicializarSidebar() {
     menuBtn.addEventListener('click', () => {
         sidebar.classList.toggle('active');
         overlay.classList.toggle('active');
+        document.body.classList.toggle('sidebar-active', sidebar.classList.contains('active'));
     });
 
     overlay.addEventListener('click', () => {
         sidebar.classList.remove('active');
         overlay.classList.remove('active');
+        document.body.classList.remove('sidebar-active');
     });
 }
 
-function inicializarScrollTop() {
-    const heroSection = document.querySelector('[data-hero]');
-    const missionSection = document.querySelector('[data-mission]');
+/* ═══════════════════════════════════════════════════════════════
+   SCROLL BEHAVIOR - IGUAL QUE BABELHOME (IntersectionObserver)
+   ═══════════════════════════════════════════════════════════════ */
+function inicializarScrollBehavior() {
+    const heroSection = document.querySelector('.page-hero');
+    const missionSection = document.querySelector('.page-mission');
     const footerElement = document.querySelector('footer');
-    const heroButton = document.getElementById('heroScrollButton');
     const scrollTopButton = document.getElementById('scrollTopButton');
     const header = document.querySelector('header');
     const sectionVisibility = {
@@ -105,28 +106,16 @@ function inicializarScrollTop() {
         footer: false,
     };
 
-    function scrollToMission() {
-        if (missionSection) {
-            missionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }
-
-    function scrollToTop() {
-        if (heroSection) {
-            heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            return;
-        }
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
     function updateTopButtonVisibility() {
         document.body.classList.toggle('show-top-btn', sectionVisibility.mission || sectionVisibility.footer);
     }
 
-    function updateHeaderVisibility() {
-        document.body.classList.toggle('header-hidden', window.scrollY > 0);
-    }
+    const heroObserver = new IntersectionObserver((entries) => {
+        const [entry] = entries;
+        document.body.classList.toggle('header-hidden', !entry.isIntersecting);
+    }, {
+        threshold: 0.55,
+    });
 
     const sectionObserver = new IntersectionObserver((entries) => {
         const [entry] = entries;
@@ -145,6 +134,10 @@ function inicializarScrollTop() {
         threshold: 0.18,
     });
 
+    if (heroSection) {
+        heroObserver.observe(heroSection);
+    }
+
     if (missionSection) {
         sectionObserver.observe(missionSection);
     }
@@ -153,19 +146,17 @@ function inicializarScrollTop() {
         footerObserver.observe(footerElement);
     }
 
-    if (heroButton) {
-        heroButton.addEventListener('click', scrollToMission);
-    }
-
     if (scrollTopButton) {
-        scrollTopButton.addEventListener('click', scrollToTop);
+        scrollTopButton.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
     }
 
-    updateHeaderVisibility();
-    window.addEventListener('scroll', updateHeaderVisibility, { passive: true });
-    window.scrollToMission = scrollToMission;
-    window.scrollToTop = scrollToTop;
-    window.addEventListener('load', updateHeaderVisibility);
+    window.addEventListener('load', () => {
+        if (header) {
+            document.body.classList.remove('header-hidden');
+        }
+    });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -174,12 +165,10 @@ function inicializarScrollTop() {
 function iniciarNivel() {
     const nivelData = palabrasData[gameState.nivel];
     if (!nivelData) {
-        // Todos los niveles completados
         misionCompletada();
         return;
     }
 
-    // Seleccionar palabra aleatoria del nivel
     const palabraObj = nivelData[Math.floor(Math.random() * nivelData.length)];
     gameState.palabraActual = palabraObj.palabra;
     gameState.pistaActual = palabraObj.pista;
@@ -189,13 +178,10 @@ function iniciarNivel() {
     gameState.errores = 0;
     gameState.juegoTerminado = false;
 
-    // Resetear visual del ahorcado
     resetearAhorcado();
 
-    // Actualizar UI
     document.getElementById('hintText').textContent = gameState.pistaActual;
     document.getElementById('nivelActual').textContent = gameState.nivel + 1;
-    document.getElementById('livesCount').textContent = gameState.vidas;
     document.getElementById('prisonerStatus').textContent = 'SANO';
     document.getElementById('prisonerStatus').className = 'status-value';
 
@@ -212,7 +198,7 @@ function resetearAhorcado() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// GENERAR SLOTS DE PALABRA
+// GENERAR SLOTS DE PALABRA - CORREGIDO: espacios visibles
 // ═══════════════════════════════════════════════════════════════
 function generarSlotsPalabra() {
     const container = document.getElementById('wordDisplay');
@@ -228,9 +214,8 @@ function generarSlotsPalabra() {
 
         if (char === ' ') {
             slot.classList.add('space');
-            slot.textContent = ' ';
+            slot.innerHTML = '&nbsp;';
         } else {
-            slot.textContent = '_';
             slot.classList.add('hidden-letter');
         }
 
@@ -244,7 +229,6 @@ function generarSlotsPalabra() {
 function inicializarTeclado() {
     const keyboard = document.getElementById('keyboard');
 
-    // Layout del teclado
     const rows = [
         ['Й','Ц','У','К','Е','Н','Г','Ш','Щ','З','Х','Ъ'],
         ['Ф','Ы','В','А','П','Р','О','Л','Д','Ж','Э'],
@@ -286,23 +270,18 @@ function intentarLetra(letra) {
     gameState.letrasUsadas.push(letra);
 
     const keyElement = document.querySelector(`.key[data-char="${letra}"]`);
-
-    // Verificar si la letra está en la palabra
     const letraEncontrada = gameState.palabraActual.includes(letra);
 
     if (letraEncontrada) {
-        // Éxito
         gameState.letrasAdivinadas.push(letra);
         if (keyElement) keyElement.classList.add('correct');
         revelarLetras(letra);
         activarEfectoExito();
 
-        // Verificar victoria
         if (verificarVictoria()) {
             setTimeout(() => nivelCompletado(), 800);
         }
     } else {
-        // Fallo
         if (keyElement) keyElement.classList.add('used');
         gameState.errores++;
         gameState.vidas--;
@@ -310,14 +289,12 @@ function intentarLetra(letra) {
         activarEfectoDanio();
         actualizarEstadoPrisionero();
 
-        // Verificar derrota
         if (gameState.vidas <= 0) {
             setTimeout(() => gameOver(), 800);
         }
     }
 
     actualizarLetrasUsadas();
-    document.getElementById('livesCount').textContent = gameState.vidas;
 }
 
 function revelarLetras(letra) {
@@ -346,7 +323,6 @@ function dibujarParteAhorcado() {
         const part = document.getElementById(partId);
         if (part) {
             part.classList.add('visible');
-            // Efecto de sonido visual (shake)
             part.style.animation = 'none';
             setTimeout(() => {
                 part.style.animation = '';
@@ -394,7 +370,6 @@ function activarEfectoDanio() {
     overlay.classList.add('active');
     setTimeout(() => overlay.classList.remove('active'), 500);
 
-    // Shake del panel
     const panel = document.querySelector('.game-panel');
     panel.style.animation = 'shake 0.5s ease';
     setTimeout(() => panel.style.animation = '', 500);
@@ -418,13 +393,11 @@ function nivelCompletado() {
         gameState.mejorRacha = gameState.racha;
     }
 
-    // Actualizar stats
     document.getElementById('palabrasCompletadas').textContent = gameState.palabrasCompletadas;
     document.getElementById('rachaActual').textContent = gameState.racha;
     document.getElementById('lvlVidas').textContent = gameState.vidas;
     document.getElementById('lvlRacha').textContent = gameState.racha;
 
-    // Mostrar modal
     document.getElementById('levelModal').classList.add('active');
 }
 
@@ -435,7 +408,6 @@ function gameOver() {
     gameState.juegoTerminado = true;
     gameState.racha = 0;
 
-    // Revelar palabra completa
     const slots = document.querySelectorAll('.letter-slot');
     slots.forEach(slot => {
         if (!slot.classList.contains('revealed') && !slot.classList.contains('space')) {
@@ -446,7 +418,6 @@ function gameOver() {
         }
     });
 
-    // Mostrar modal después de un momento
     setTimeout(() => {
         document.getElementById('finalNivel').textContent = gameState.nivel + 1;
         document.getElementById('finalPalabras').textContent = gameState.palabrasCompletadas;
@@ -459,12 +430,10 @@ function gameOver() {
 // MODALES
 // ═══════════════════════════════════════════════════════════════
 function inicializarModales() {
-    // Siguiente nivel
     document.getElementById('btnNextLevel').addEventListener('click', () => {
         document.getElementById('levelModal').classList.remove('active');
         gameState.nivel++;
 
-        // Recuperar una vida cada 3 niveles (máximo 6)
         if (gameState.nivel % 3 === 0 && gameState.vidas < 6) {
             gameState.vidas++;
         }
@@ -472,12 +441,10 @@ function inicializarModales() {
         iniciarNivel();
     });
 
-    // Reintentar
     document.getElementById('btnRetry').addEventListener('click', () => {
         reiniciarJuego();
     });
 
-    // Salir
     document.getElementById('btnExit').addEventListener('click', () => {
         window.location.href = 'mazos.html';
     });
@@ -505,8 +472,6 @@ document.addEventListener('keydown', (e) => {
     if (gameState.juegoTerminado) return;
 
     const letra = e.key.toUpperCase();
-
-    // Verificar si es una letra válida del alfabeto ruso o chino
     const letrasValidas = 'ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ';
 
     if (letrasValidas.includes(letra)) {

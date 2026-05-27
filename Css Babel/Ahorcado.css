@@ -1,6 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
    AHORCADO.CSS - Modo Infiltración de Operación Babel
-   Estilo: Terminal militar oscuro con efectos CRT y animaciones
    ═══════════════════════════════════════════════════════════════ */
 
 @import 'Babelhome.css';
@@ -9,7 +8,7 @@
     --terminal-green: #5a7a5a;
     --terminal-amber: #8b7355;
     --card-bg: rgba(25, 25, 25, 0.9);
-    --nav-height: 100px;
+    --nav-height: 80px;
     --bg-dark: #0a0a0a;
 }
 
@@ -21,6 +20,8 @@
 
 html {
     overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) #0a0a0a;
 }
 
 body {
@@ -31,6 +32,25 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+/* Scrollbar estilizado */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -110,7 +130,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   NAVEGACIÓN
+   NAVEGACIÓN - COMO BABELHOME (se oculta al hacer scroll)
    ═══════════════════════════════════════════════════════════════ */
 header {
     position: fixed;
@@ -159,64 +179,8 @@ body.header-hidden header {
     cursor: pointer;
 }
 
-.top-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: var(--nav-height);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 30px;
-    background: linear-gradient(to bottom, rgba(10, 10, 10, 0.98), rgba(5, 5, 5, 0.95));
-    border-bottom: 1px solid rgba(179, 0, 0, 0.3);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-    z-index: 50;
-}
-
-.nav-side {
-    width: 42px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.6rem;
-    color: var(--military-red);
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.nav-side:hover { color: #fff; text-shadow: 0 0 10px var(--military-red); }
-
-.lives-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--military-red);
-    font-size: 1.1rem;
-    font-weight: bold;
-}
-
-.lives-display i { font-size: 1.3rem; }
-
-.nav-brand {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-transform: uppercase;
-    letter-spacing: 6px;
-    gap: 4px;
-    color: inherit;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.nav-brand i { font-size: 1.5rem; color: var(--military-red); }
-.nav-brand span { font-size: 0.85rem; white-space: nowrap; color: #aaa; }
-
 /* ═══════════════════════════════════════════════════════════════
-   SIDEBAR
+   SIDEBAR - IGUAL QUE BABELHOME
    ═══════════════════════════════════════════════════════════════ */
 .sidebar {
     position: fixed;
@@ -386,14 +350,20 @@ body.header-hidden header {
     padding-bottom: 60px;
 }
 
-.page-hero {
-    position: relative;
-    padding-bottom: 90px;
+/* CORREGIDO: Cuando sidebar está activo, empujar el contenido */
+body.sidebar-active .main-content {
+    margin-left: 280px;
+    transition: margin-left 0.42s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-.page-hero .scroll-btn {
-    left: 50%;
-    transform: translateX(-50%);
+body.sidebar-active footer {
+    margin-left: 280px;
+    transition: margin-left 0.42s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.page-hero {
+    position: relative;
+    padding-bottom: 40px;
 }
 
 .page-mission {
@@ -570,11 +540,13 @@ body.header-hidden header {
 .hint-box i { color: var(--terminal-amber); font-size: 1.2rem; }
 .hint-box span { color: #aaa; font-size: 0.9rem; }
 
-/* Display de palabra */
+/* ═══════════════════════════════════════════════════════════════
+   DISPLAY DE PALABRA - CORREGIDO: espacios y guiones visibles
+   ═══════════════════════════════════════════════════════════════ */
 .word-display {
     display: flex;
     justify-content: center;
-    gap: 12px;
+    gap: 16px;
     flex-wrap: wrap;
     padding: 30px 0;
     min-height: 100px;
@@ -591,25 +563,40 @@ body.header-hidden header {
     justify-content: center;
     font-size: 1.8rem;
     font-weight: bold;
-    color: #f0f0f0;
     font-family: 'Courier New', Courier, monospace;
     letter-spacing: 2px;
     line-height: 1;
     transition: all 0.4s ease;
     position: relative;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.18);
 }
 
+/* Slot con letra oculta - muestra guion bajo visible */
 .letter-slot.hidden-letter {
-    color: #f0f0f0;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.18);
+    color: transparent;
 }
 
+.letter-slot.hidden-letter::after {
+    content: '_';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.2rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: bold;
+    letter-spacing: 0;
+}
+
+/* Slot revelado - oculta guion, muestra letra */
 .letter-slot.revealed {
     color: var(--terminal-green);
     border-bottom-color: var(--terminal-green);
     text-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
     animation: letter-reveal 0.5s ease;
+}
+
+.letter-slot.revealed::after {
+    display: none;
 }
 
 @keyframes letter-reveal {
@@ -618,9 +605,22 @@ body.header-hidden header {
     100% { transform: scale(1) rotateY(0); opacity: 1; }
 }
 
+/* Slot de espacio - CORREGIDO: más visible */
 .letter-slot.space {
-    width: 30px;
+    width: 40px;
     border-bottom: none;
+    opacity: 0.3;
+}
+
+.letter-slot.space::after {
+    content: '·';
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.4);
+    display: block !important;
 }
 
 /* Teclado virtual */
@@ -841,7 +841,6 @@ body.header-hidden header {
     box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
 }
 
-/* Game Over modal */
 .gameover-skull { font-size: 4rem; margin-bottom: 20px; color: rgba(240, 240, 240, 0.8); }
 .gameover-content h2 {
     color: #f5f5f5;
@@ -940,6 +939,8 @@ footer {
     text-align: center;
     z-index: 10;
     margin-top: auto;
+    width: 100%;
+    flex-shrink: 0;
 }
 
 footer::before,
@@ -991,6 +992,42 @@ footer > * {
     50% { transform: translateX(1.5%) translateY(-4px); }
 }
 
+/* Scroll top btn */
+.scroll-top-btn {
+    position: fixed;
+    right: 32px;
+    bottom: 32px;
+    z-index: 12;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    background: rgba(0, 0, 0, 0.58);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px) scale(0.96);
+    transition: opacity 0.3s ease, transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    cursor: pointer;
+}
+
+.scroll-top-btn:hover {
+    background: rgba(0, 0, 0, 0.82);
+    border-color: rgba(255, 255, 255, 1);
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.45));
+}
+
+body.show-top-btn .scroll-top-btn {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
 /* ═══════════════════════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════════════════════ */
@@ -1023,12 +1060,15 @@ footer > * {
         font-size: 1.3rem;
     }
 
+    .letter-slot.hidden-letter::after {
+        font-size: 1.8rem;
+    }
+
     .mission-stats-bar { gap: 25px; }
     .mstat-value { font-size: 1.4rem; }
-}
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
+    body.sidebar-active .main-content,
+    body.sidebar-active footer {
+        margin-left: 0;
+    }
+}

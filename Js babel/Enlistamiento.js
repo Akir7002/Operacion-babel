@@ -1,3 +1,7 @@
+/* ═══════════════════════════════════════════════════════════════
+   ENLISTAMIENTO.JS - Registro de Reclutas de Operación Babel
+   ═══════════════════════════════════════════════════════════════ */
+
 document.addEventListener('DOMContentLoaded', () => {
     const contactFrequencyInput = document.getElementById('contactFrequency');
     const contactField = document.getElementById('contactField');
@@ -13,8 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const stamp = document.getElementById('stamp');
     const blackout = document.getElementById('blackoutScreen');
     const newEnlistmentBtn = document.getElementById('newEnlistmentBtn');
+
+    // Inicializar sidebar y scroll behavior como Babelhome
     inicializarSidebar();
-    inicializarScrollTop();
+    inicializarScrollBehavior();
+
     function isGmailAddress(value) {
         return /^[^\s@]+@gmail\.com$/i.test(value.trim());
     }
@@ -117,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('summaryContact').textContent = contact;
         document.getElementById('summaryDate').textContent = date;
         document.getElementById('summaryFront').textContent = front;
-        
+
         enlistmentForm.style.display = 'none';
         summaryView.classList.remove('hidden');
     }
@@ -170,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
             hideStamp();
             showSummary(recruitNameValue, contactValue, dateValue, selectedFront);
 
-            console.log('Datos enviados al Cuartel General del Búnker 270.');
+            console.log('Datos enviados al Cuartel General de la Base Babel.');
         }, 3500);
     }
 
@@ -226,6 +233,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.triggerGameOver = triggerGameOver;
 });
 
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR - IGUAL QUE BABELHOME (con body.sidebar-active)
+   ═══════════════════════════════════════════════════════════════ */
 function inicializarSidebar() {
     const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.getElementById('sidebar');
@@ -239,52 +249,45 @@ function inicializarSidebar() {
     menuBtn.addEventListener('click', () => {
         sidebar.classList.toggle('active');
         overlay.classList.toggle('active');
+        document.body.classList.toggle('sidebar-active', sidebar.classList.contains('active'));
     });
 
     overlay.addEventListener('click', () => {
         sidebar.classList.remove('active');
         overlay.classList.remove('active');
+        document.body.classList.remove('sidebar-active');
     });
 }
 
-function inicializarScrollTop() {
-    const heroSection = document.querySelector('[data-hero]');
-    const missionSection = document.querySelector('[data-mission]');
+/* ═══════════════════════════════════════════════════════════════
+   SCROLL BEHAVIOR - IGUAL QUE BABELHOME (IntersectionObserver)
+   ═══════════════════════════════════════════════════════════════ */
+function inicializarScrollBehavior() {
+    const mainSection = document.querySelector('main');
     const footerElement = document.querySelector('footer');
-    const heroButton = document.getElementById('heroScrollButton');
     const scrollTopButton = document.getElementById('scrollTopButton');
     const header = document.querySelector('header');
     const sectionVisibility = {
-        mission: false,
+        main: false,
         footer: false,
     };
 
-    function scrollToMission() {
-        if (missionSection) {
-            missionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }
-
-    function scrollToTop() {
-        if (heroSection) {
-            heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            return;
-        }
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
     function updateTopButtonVisibility() {
-        document.body.classList.toggle('show-top-btn', sectionVisibility.mission || sectionVisibility.footer);
+        document.body.classList.toggle('show-top-btn', sectionVisibility.main || sectionVisibility.footer);
     }
 
-    function updateHeaderVisibility() {
-        document.body.classList.toggle('header-hidden', window.scrollY > 0);
-    }
-
-    const sectionObserver = new IntersectionObserver((entries) => {
+    // Observer para el main (equivalente a hero-section en Babelhome)
+    const mainObserver = new IntersectionObserver((entries) => {
         const [entry] = entries;
-        sectionVisibility.mission = entry.isIntersecting;
+        document.body.classList.toggle('header-hidden', !entry.isIntersecting);
+    }, {
+        threshold: 0.55,
+    });
+
+    // Observer para detectar cuando se hace scroll más allá del main
+    const scrollObserver = new IntersectionObserver((entries) => {
+        const [entry] = entries;
+        sectionVisibility.main = !entry.isIntersecting;
         updateTopButtonVisibility();
     }, {
         threshold: 0.25,
@@ -299,25 +302,32 @@ function inicializarScrollTop() {
         threshold: 0.18,
     });
 
-    if (missionSection) {
-        sectionObserver.observe(missionSection);
+    if (mainSection) {
+        mainObserver.observe(mainSection);
+        // Crear un elemento sentinel para detectar scroll
+        const sentinel = document.createElement('div');
+        sentinel.style.position = 'absolute';
+        sentinel.style.top = '100px';
+        sentinel.style.height = '1px';
+        sentinel.style.width = '100%';
+        sentinel.style.pointerEvents = 'none';
+        document.body.prepend(sentinel);
+        scrollObserver.observe(sentinel);
     }
 
     if (footerElement) {
         footerObserver.observe(footerElement);
     }
 
-    if (heroButton) {
-        heroButton.addEventListener('click', scrollToMission);
-    }
-
     if (scrollTopButton) {
-        scrollTopButton.addEventListener('click', scrollToTop);
+        scrollTopButton.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
     }
 
-    updateHeaderVisibility();
-    window.addEventListener('scroll', updateHeaderVisibility, { passive: true });
-    window.scrollToMission = scrollToMission;
-    window.scrollToTop = scrollToTop;
-    window.addEventListener('load', updateHeaderVisibility);
+    window.addEventListener('load', () => {
+        if (header) {
+            document.body.classList.remove('header-hidden');
+        }
+    });
 }
