@@ -110,12 +110,72 @@ function inicializarScrollBehavior() {
         document.body.classList.toggle('show-top-btn', sectionVisibility.mission || sectionVisibility.footer);
     }
 
-    const heroObserver = new IntersectionObserver((entries) => {
-        const [entry] = entries;
-        document.body.classList.toggle('header-hidden', !entry.isIntersecting);
-    }, {
-        threshold: 0.55,
-    });
+    const navbarThresholdPx = 5;
+    let lastScrollTop = 0;
+    let ticking = false;
+
+    function resolveScrollElement() {
+        const candidates = [
+            document.scrollingElement,
+            document.documentElement,
+            document.body,
+            document.querySelector('main'),
+            document.querySelector('.main-content'),
+            document.querySelector('.page-shell'),
+            document.querySelector('.page-wrap'),
+        ].filter(Boolean);
+
+        return candidates.find((el) => (el.scrollHeight - el.clientHeight) > 2)
+            || document.scrollingElement
+            || document.documentElement;
+    }
+
+    let scrollElement = null;
+
+    function getScrollTop() {
+        const el = scrollElement || (scrollElement = resolveScrollElement());
+        return el ? el.scrollTop : window.scrollY;
+    }
+
+    function showHeader() {
+        document.body.classList.remove('header-hidden');
+    }
+
+    function hideHeader() {
+        document.body.classList.add('header-hidden');
+    }
+
+    function updateHeaderOnScroll() {
+        const currentTop = getScrollTop();
+
+        if (currentTop <= navbarThresholdPx) {
+            showHeader();
+            lastScrollTop = currentTop;
+            return;
+        }
+
+        const delta = currentTop - lastScrollTop;
+        if (Math.abs(delta) < 1) {
+            return;
+        }
+
+        if (delta > 0) {
+            hideHeader();
+        } else {
+            showHeader();
+        }
+
+        lastScrollTop = currentTop;
+    }
+
+    function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(() => {
+            updateHeaderOnScroll();
+            ticking = false;
+        });
+    }
 
     const sectionObserver = new IntersectionObserver((entries) => {
         const [entry] = entries;
@@ -134,9 +194,12 @@ function inicializarScrollBehavior() {
         threshold: 0.18,
     });
 
-    if (heroSection) {
-        heroObserver.observe(heroSection);
-    }
+    scrollElement = resolveScrollElement();
+    lastScrollTop = getScrollTop();
+    updateHeaderOnScroll();
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('scroll', onScroll, true);
 
     if (missionSection) {
         sectionObserver.observe(missionSection);
@@ -153,9 +216,9 @@ function inicializarScrollBehavior() {
     }
 
     window.addEventListener('load', () => {
-        if (header) {
-            document.body.classList.remove('header-hidden');
-        }
+        scrollElement = null;
+        lastScrollTop = getScrollTop();
+        updateHeaderOnScroll();
     });
 }
 

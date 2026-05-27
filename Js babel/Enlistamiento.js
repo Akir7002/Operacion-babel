@@ -276,13 +276,72 @@ function inicializarScrollBehavior() {
         document.body.classList.toggle('show-top-btn', sectionVisibility.main || sectionVisibility.footer);
     }
 
-    // Observer para el main (equivalente a hero-section en Babelhome)
-    const mainObserver = new IntersectionObserver((entries) => {
-        const [entry] = entries;
-        document.body.classList.toggle('header-hidden', !entry.isIntersecting);
-    }, {
-        threshold: 0.55,
-    });
+    const navbarThresholdPx = 5;
+    let lastScrollTop = 0;
+    let ticking = false;
+
+    function resolveScrollElement() {
+        const candidates = [
+            document.scrollingElement,
+            document.documentElement,
+            document.body,
+            document.querySelector('main'),
+            document.querySelector('.main-content'),
+            document.querySelector('.page-shell'),
+            document.querySelector('.page-wrap'),
+        ].filter(Boolean);
+
+        return candidates.find((el) => (el.scrollHeight - el.clientHeight) > 2)
+            || document.scrollingElement
+            || document.documentElement;
+    }
+
+    let scrollElement = null;
+
+    function getScrollTop() {
+        const el = scrollElement || (scrollElement = resolveScrollElement());
+        return el ? el.scrollTop : window.scrollY;
+    }
+
+    function showHeader() {
+        document.body.classList.remove('header-hidden');
+    }
+
+    function hideHeader() {
+        document.body.classList.add('header-hidden');
+    }
+
+    function updateHeaderOnScroll() {
+        const currentTop = getScrollTop();
+
+        if (currentTop <= navbarThresholdPx) {
+            showHeader();
+            lastScrollTop = currentTop;
+            return;
+        }
+
+        const delta = currentTop - lastScrollTop;
+        if (Math.abs(delta) < 1) {
+            return;
+        }
+
+        if (delta > 0) {
+            hideHeader();
+        } else {
+            showHeader();
+        }
+
+        lastScrollTop = currentTop;
+    }
+
+    function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(() => {
+            updateHeaderOnScroll();
+            ticking = false;
+        });
+    }
 
     // Observer para detectar cuando se hace scroll más allá del main
     const scrollObserver = new IntersectionObserver((entries) => {
@@ -303,7 +362,6 @@ function inicializarScrollBehavior() {
     });
 
     if (mainSection) {
-        mainObserver.observe(mainSection);
         // Crear un elemento sentinel para detectar scroll
         const sentinel = document.createElement('div');
         sentinel.style.position = 'absolute';
@@ -325,9 +383,16 @@ function inicializarScrollBehavior() {
         });
     }
 
+    scrollElement = resolveScrollElement();
+    lastScrollTop = getScrollTop();
+    updateHeaderOnScroll();
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('scroll', onScroll, true);
+
     window.addEventListener('load', () => {
-        if (header) {
-            document.body.classList.remove('header-hidden');
-        }
+        scrollElement = null;
+        lastScrollTop = getScrollTop();
+        updateHeaderOnScroll();
     });
 }
