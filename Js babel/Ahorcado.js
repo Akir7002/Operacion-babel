@@ -124,12 +124,9 @@ function inicializarScrollTop() {
         document.body.classList.toggle('show-top-btn', sectionVisibility.mission || sectionVisibility.footer);
     }
 
-    const heroObserver = new IntersectionObserver((entries) => {
-        const [entry] = entries;
-        document.body.classList.toggle('header-hidden', !entry.isIntersecting);
-    }, {
-        threshold: 0.55,
-    });
+    function updateHeaderVisibility() {
+        document.body.classList.toggle('header-hidden', window.scrollY > 0);
+    }
 
     const sectionObserver = new IntersectionObserver((entries) => {
         const [entry] = entries;
@@ -148,10 +145,6 @@ function inicializarScrollTop() {
         threshold: 0.18,
     });
 
-    if (heroSection) {
-        heroObserver.observe(heroSection);
-    }
-
     if (missionSection) {
         sectionObserver.observe(missionSection);
     }
@@ -168,13 +161,11 @@ function inicializarScrollTop() {
         scrollTopButton.addEventListener('click', scrollToTop);
     }
 
+    updateHeaderVisibility();
+    window.addEventListener('scroll', updateHeaderVisibility, { passive: true });
     window.scrollToMission = scrollToMission;
     window.scrollToTop = scrollToTop;
-    window.addEventListener('load', () => {
-        if (header) {
-            header.classList.remove('header-hidden');
-        }
-    });
+    window.addEventListener('load', updateHeaderVisibility);
 }
 
 // ═══════════════════════════════════════════════════════════════
