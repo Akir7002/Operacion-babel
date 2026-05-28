@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         summaryView.classList.add('hidden');
     }
 
-    function processForm(event) {
+    async function processForm(event) {
         if (event) {
             event.preventDefault();
         }
@@ -172,13 +172,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showStamp();
+        if (stamp) {
+            stamp.textContent = 'TRANSMITIENDO...';
+        }
 
-        window.setTimeout(() => {
+        try {
+            const response = await fetch('http://localhost:3000/api/reclutas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    nombre: recruitNameValue,
+                    contacto: contactValue,
+                    fecha: dateValue,
+                    frente: selectedFront
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Fallo en la transmisión de datos.');
+            }
+
+            if (stamp) {
+                stamp.textContent = 'APROBADO';
+            }
+
+            window.setTimeout(() => {
+                hideStamp();
+                showSummary(recruitNameValue, contactValue, dateValue, selectedFront);
+                console.log(`Recluta registrado. Nombre Clave: ${data.datos?.NombreClave}, Código: ${data.datos?.CodigoAlistamiento}`);
+            }, 2000);
+        } catch (error) {
+            console.error('Error de comunicación:', error);
             hideStamp();
-            showSummary(recruitNameValue, contactValue, dateValue, selectedFront);
-
-            console.log('Datos enviados al Cuartel General de la Base Babel.');
-        }, 3500);
+            triggerGameOver();
+        }
     }
 
     function triggerGameOver() {
