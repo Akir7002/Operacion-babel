@@ -346,7 +346,7 @@ body.header-hidden header {
     flex: 1;
     position: relative;
     z-index: 5;
-    padding-top: calc(var(--nav-height) + 20px);
+    padding-top: calc(var(--nav-height) + 100px);
     padding-bottom: 60px;
 }
 

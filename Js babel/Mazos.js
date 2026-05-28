@@ -1,109 +1,40 @@
-/* ═══════════════════════════════════════════════════════════════
-   MAZOS.JS - Controlador de la Armería de Mazos
-   Gestión de datos, filtros, y navegación a flashcards
-   ═══════════════════════════════════════════════════════════════ */
-
-// Datos de mazos (simulando respuesta de base de datos)
-const mazosData = [
-    {
-        id: 1,
-        nombre: "Vocabulario Básico RU",
-        descripcion: "Palabras esenciales para supervivencia en territorio ruso",
-        idioma: "ru",
-        idiomaNombre: "Ruso",
-        categoria: "General",
-        nivel: 1,
-        nivelNombre: "Clasificado",
-        icono: "bi bi-journal",
-        totalFlashcards: 25,
-        completadas: 12,
-        color: "#4a7c59"
-    },
-    {
-        id: 2,
-        nombre: "Arsenal Militar RU",
-        descripcion: "Terminología táctica y de armamento en cirílico",
-        idioma: "ru",
-        idiomaNombre: "Ruso",
-        categoria: "Militar",
-        nivel: 2,
-        nivelNombre: "Secreto",
-        icono: "bi bi-crosshair2",
-        totalFlashcards: 30,
-        completadas: 5,
-        color: "#d4a017"
-    },
-    {
-        id: 3,
-        nombre: "Supervivencia Urbana RU",
-        descripcion: "Frases críticas para operaciones encubiertas",
-        idioma: "ru",
-        idiomaNombre: "Ruso",
-        categoria: "Supervivencia",
-        nivel: 3,
-        nivelNombre: "Ultra Secreto",
-        icono: "bi bi-shield",
-        totalFlashcards: 20,
-        completadas: 0,
-        color: "#8b0000"
-    },
-    {
-        id: 4,
-        nombre: "Hanzi Fundamentales",
-        descripcion: "Caracteres básicos del mandarín para reconocimiento",
-        idioma: "zh",
-        idiomaNombre: "Mandarín",
-        categoria: "General",
-        nivel: 1,
-        nivelNombre: "Clasificado",
-        icono: "bi bi-book",
-        totalFlashcards: 40,
-        completadas: 28,
-        color: "#4a7c59"
-    },
-    {
-        id: 5,
-        nombre: "Código Rojo ZH",
-        descripcion: "Vocabulario de contrainteligencia en chino mandarín",
-        idioma: "zh",
-        idiomaNombre: "Mandarín",
-        categoria: "Contrainteligencia",
-        nivel: 2,
-        nivelNombre: "Secreto",
-        icono: "bi bi-eye",
-        totalFlashcards: 35,
-        completadas: 15,
-        color: "#d4a017"
-    },
-    {
-        id: 6,
-        nombre: "Slang de Campo ZH",
-        descripcion: "Expresiones coloquiales para infiltración profunda",
-        idioma: "zh",
-        idiomaNombre: "Mandarín",
-        categoria: "Slang",
-        nivel: 3,
-        nivelNombre: "Ultra Secreto",
-        icono: "bi bi-chat",
-        totalFlashcards: 22,
-        completadas: 22,
-        color: "#8b0000"
-    }
-];
-
-// Estado de la aplicación
+// Estado inicial de la aplicación (vacío al principio)
 let state = {
-    mazos: [...mazosData],
+    mazos: [],
     filtroIdioma: '',
     filtroNivel: '',
     mazoSeleccionado: null
 };
+// Función para solicitar los mazos al backend
+async function obtenerMazosDesdeBD() {
+    try {
+        const response = await fetch('http://localhost:3000/api/mazos');
+        
+        if (!response.ok) {
+            throw new Error('Fallo al contactar el Cuartel General');
+        }
+        
+        const data = await response.json();
+        state.mazos = data; // Guardamos los datos reales en el estado
+        
+        // Renderizamos la interfaz una vez lleguen los datos
+        renderizarMazos();
+        actualizarStats();
+        
+    } catch (error) {
+        console.error('Error de inteligencia:', error);
+        document.getElementById('mazosGrid').innerHTML = 
+            '<div style="text-align:center; padding: 40px; color: var(--military-red); width: 100%;">' +
+            '<i class="bi bi-exclamation-triangle-fill fs-1"></i>' +
+            '<h3>SIN CONEXIÓN AL SERVIDOR</h3>' +
+            '<p>No se pudo cargar la armería de mazos.</p></div>';
+    }
+}
 
-// Inicialización
+// Inicialización (¡Solo un bloque!)
 document.addEventListener('DOMContentLoaded', () => {
     inicializarSidebar();
-    renderizarMazos();
-    actualizarStats();
+    obtenerMazosDesdeBD(); // Llamada a la API en lugar de renderizar estático
     inicializarFiltros();
     inicializarModal();
     inicializarScrollTop();
@@ -316,7 +247,7 @@ function inicializarFiltros() {
 
 function filtrarMazos() {
     return state.mazos.filter(mazo => {
-        const matchIdioma = !state.filtroIdioma || mazo.idioma === state.filtroIdioma;
+        const matchIdioma = !state.filtroIdioma || mazo.idioma.toLowerCase() === state.filtroIdioma.toLowerCase();
         const matchNivel = !state.filtroNivel || mazo.nivel === parseInt(state.filtroNivel);
         return matchIdioma && matchNivel;
     });

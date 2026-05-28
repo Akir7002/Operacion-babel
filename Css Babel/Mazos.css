@@ -393,8 +393,7 @@ body.header-hidden header {
     position: relative;
     z-index: 5;
     padding-top: calc(var(--nav-height) + 30px);
-    padding-bottom: 60px;
-    min-height: 0;
+    padding-bottom: 40px;
 }
 
 .page-hero {
@@ -917,6 +916,7 @@ footer {
     text-align: center;
     z-index: 10;
     margin-top: auto;
+    flex-shrink: 0;
 }
 
 footer::before {

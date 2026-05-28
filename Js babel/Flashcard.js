@@ -59,6 +59,53 @@ let gameState = {
     completado: false
 };
 
+// ═══════════════════════════════════════════════════════════════
+// PANTALLA DE CARGA
+// ═══════════════════════════════════════════════════════════════
+function mostrarPantallaDeUnidad(titulo, subtitulo) {
+    let pantalla = document.getElementById('pantallaDeUnidad');
+    
+    if (!pantalla) {
+        pantalla = document.createElement('div');
+        pantalla.id = 'pantallaDeUnidad';
+        pantalla.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9999;
+            gap: 20px;
+        `;
+        document.body.appendChild(pantalla);
+    }
+    
+    pantalla.innerHTML = `
+        <div style="text-align: center; color: #fff; font-family: 'Courier New', monospace;">
+            <div style="font-size: 48px; margin-bottom: 20px;">📡</div>
+            <h2 style="font-size: 28px; letter-spacing: 3px; margin: 0;">${titulo}</h2>
+            <p style="font-size: 14px; color: #888; letter-spacing: 2px; margin: 0;">${subtitulo}</p>
+            <div style="margin-top: 20px; font-size: 16px; letter-spacing: 2px; color: #666;">
+                . . .
+            </div>
+        </div>
+    `;
+    
+    pantalla.style.display = 'flex';
+}
+
+function cerrarPantallaDeUnidad() {
+    const pantalla = document.getElementById('pantallaDeUnidad');
+    if (pantalla) {
+        pantalla.style.display = 'none';
+    }
+}
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
     inicializarSidebar();
@@ -179,29 +226,68 @@ function inicializarScrollTop() {
 // ═══════════════════════════════════════════════════════════════
 // CARGAR MAZO
 // ═══════════════════════════════════════════════════════════════
-function cargarMazo() {
+async function cargarMazo() {
     const mazoGuardado = sessionStorage.getItem('mazoActivo');
 
     if (!mazoGuardado) {
         // Si no hay mazo seleccionado, redirigir a mazos
-        window.location.href = 'mazos.html';
+        window.location.href = 'Mazos.html';
         return;
     }
 
     gameState.mazo = JSON.parse(mazoGuardado);
-    gameState.flashcards = [...(flashcardsData[gameState.mazo.id] || [])];
+    
+    // Mostrar pantalla de carga
+    mostrarPantallaDeUnidad('Cargando', 'flashcards del servidor de inteligencia...');
+    
+    try {
+        // Obtener flashcards de la API
+        const response = await fetch(`http://localhost:3000/api/mazos/${gameState.mazo.id}/flashcards`);
+        
+        if (!response.ok) {
+            throw new Error('Fallo al cargar las flashcards');
+        }
+        
+        const flashcards = await response.json();
+        
+        // Mapear datos de la API al formato esperado
+        gameState.flashcards = flashcards.map((fc, index) => ({
+            id: fc.id || index,
+            palabra: fc.palabra || fc.pregunta,
+            pronunciacion: fc.pronunciacion || '',
+            traduccion: fc.respuesta || fc.traduccion,
+            contexto: fc.respuesta,
+            categoria: fc.tipo || 'General'
+        }));
+        
+        // Mezclar flashcards aleatoriamente
+        gameState.flashcards.sort(() => Math.random() - 0.5);
+        
+        // Cerrar pantalla de carga
+        cerrarPantallaDeUnidad();
+        
+        // Actualizar UI
+        document.getElementById('mazoNombre').textContent = gameState.mazo.nombre;
+        document.getElementById('totalCards').textContent = gameState.flashcards.length;
+        document.getElementById('currentCard').textContent = '1';
 
-    // Mezclar flashcards aleatoriamente
-    gameState.flashcards.sort(() => Math.random() - 0.5);
-
-    // Actualizar UI
-    document.getElementById('mazoNombre').textContent = gameState.mazo.nombre;
-    document.getElementById('totalCards').textContent = gameState.flashcards.length;
-    document.getElementById('currentCard').textContent = '1';
-    document.getElementById('livesCount').textContent = gameState.vidas;
-
-    actualizarContadores();
-    mostrarFlashcardActual();
+        actualizarContadores();
+        mostrarFlashcardActual();
+        
+    } catch (error) {
+        console.error('Error al cargar flashcards:', error);
+        cerrarPantallaDeUnidad();
+        
+        // Mostrar error
+        document.getElementById('mazoNombre').textContent = '⚠️ ERROR DE CONEXIÓN';
+        document.getElementById('totalCards').textContent = '0';
+        
+        // Mostrar modal de error
+        setTimeout(() => {
+            alert('No se pudieron cargar las flashcards. Regresando a mazos...');
+            window.location.href = 'Mazos.html';
+        }, 2000);
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════
