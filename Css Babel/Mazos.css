@@ -5,6 +5,7 @@
 
 @import 'Babelhome.css';
 
+/* Estilos del catalogo de mazos y la armeria. */
 :root {
     --terminal-green: #5a7a5a;
     --terminal-amber: #8b7355;
@@ -154,6 +155,8 @@ body.header-hidden header {
 
 .user-icon {
     cursor: pointer;
+    color: inherit;
+    text-decoration: none;
 }
 
 .top-nav {
@@ -398,12 +401,7 @@ body.header-hidden header {
 
 .page-hero {
     position: relative;
-    padding-bottom: 90px;
-}
-
-.page-hero .scroll-btn {
-    left: 50%;
-    transform: translateX(-50%);
+    padding-bottom: 20px;
 }
 
 .page-mission {

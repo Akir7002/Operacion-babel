@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <!-- Recursos del formulario de reclutamiento -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> Registro de Reclutas</title>
@@ -12,6 +13,7 @@
 </head>
 <body>
 
+    <!-- Efectos atmosfericos de la pagina -->
     <div class="spotlight"></div>
     <div class="fog-container"></div>
 
@@ -23,9 +25,9 @@
             <i class="bi bi-shield-lock fs-3"></i><br>
             <span>Base de Operaciones Babel</span>
         </a>
-        <div class="user-icon">
+        <a class="user-icon" href="Perfil.html" aria-label="Perfil">
             <i class="bi bi-person-badge fs-3"></i>
-        </div>
+        </a>
     </header>
 
     <!-- SIDEBAR DE NAVEGACIÓN -->
@@ -62,6 +64,7 @@
     </nav>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+    <!-- Contenedor principal del formulario y resumen -->
     <div class="page-shell">
     <main class="page-wrap page-hero" data-hero>
 
@@ -80,8 +83,16 @@
             <div class="field field-with-status" id="contactField">
                 <label>Frecuencia de contacto:</label>
                 <div class="input-wrap">
-                    <input type="email" id="contactFrequency" spellcheck="false" autocomplete="email" inputmode="email" placeholder="correo@gmail.com">
+                    <input type="email" id="contactFrequency" spellcheck="false" autocomplete="email" inputmode="email" placeholder="correo@ejemplo.com">
                     <span class="field-status" id="contactStatus" aria-hidden="true"><i class="bi bi-exclamation-circle-fill"></i></span>
+                </div>
+            </div>
+
+            <div class="field field-with-status" id="passwordField">
+                <label>Contraseña de Acceso:</label>
+                <div class="input-wrap">
+                    <input type="password" id="recruitPassword" placeholder="Crea tu contraseña segura">
+                    <span class="field-status" aria-hidden="true"><i class="bi bi-exclamation-circle-fill"></i></span>
                 </div>
             </div>
 
@@ -149,10 +160,6 @@
         <div class="footer-line mt-3">&copy; 2026: Todos los derechos reservados bajo la jurisdicción de la Alianza Babel</div>
     </footer>
     </div>
-
-    <button class="scroll-top-btn" id="scrollTopButton" aria-label="Volver arriba">
-        <i class="bi bi-chevron-double-up"></i>
-    </button>
 
 </body>
 </html>

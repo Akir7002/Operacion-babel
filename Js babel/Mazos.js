@@ -1,11 +1,11 @@
-// Estado inicial de la aplicación (vacío al principio)
+// Estado inicial de la aplicacion: filtros y mazo activo.
 let state = {
     mazos: [],
     filtroIdioma: '',
     filtroNivel: '',
     mazoSeleccionado: null
 };
-// Función para solicitar los mazos al backend
+// Solicita el listado de mazos al backend.
 async function obtenerMazosDesdeBD() {
     try {
         const response = await fetch('http://localhost:3000/api/mazos');
@@ -31,7 +31,7 @@ async function obtenerMazosDesdeBD() {
     }
 }
 
-// Inicialización (¡Solo un bloque!)
+// Inicializacion principal de la pantalla de mazos.
 document.addEventListener('DOMContentLoaded', () => {
     inicializarSidebar();
     obtenerMazosDesdeBD(); // Llamada a la API en lugar de renderizar estático
@@ -63,10 +63,11 @@ function inicializarSidebar() {
         overlay.classList.remove('active');
     });
 
-    // Actualizar vidas visuales
+    // Actualizar vidas visuales.
     actualizarVidas(5);
 }
 
+// Seccion de scroll superior y comportamiento del header.
 function inicializarScrollTop() {
     const heroSection = document.querySelector('[data-hero]');
     const missionSection = document.querySelector('[data-mission]');
@@ -79,12 +80,14 @@ function inicializarScrollTop() {
         footer: false,
     };
 
+    // Lleva al area principal de entrenamiento.
     function scrollToMission() {
         if (missionSection) {
             missionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
 
+    // Devuelve el usuario al inicio del panel.
     function scrollToTop() {
         if (heroSection) {
             heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -94,10 +97,12 @@ function inicializarScrollTop() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // Cambia la visibilidad del boton flotante segun el scroll.
     function updateTopButtonVisibility() {
         document.body.classList.toggle('show-top-btn', sectionVisibility.mission || sectionVisibility.footer);
     }
 
+    // Oculta el header cuando el hero sale de la vista.
     const heroObserver = new IntersectionObserver((entries) => {
         const [entry] = entries;
         document.body.classList.toggle('header-hidden', !entry.isIntersecting);
@@ -105,6 +110,7 @@ function inicializarScrollTop() {
         threshold: 0.55,
     });
 
+    // Activa la ayuda de vuelta arriba en la zona de contenido.
     const sectionObserver = new IntersectionObserver((entries) => {
         const [entry] = entries;
         sectionVisibility.mission = entry.isIntersecting;
@@ -113,6 +119,7 @@ function inicializarScrollTop() {
         threshold: 0.25,
     });
 
+    // Marca el modo de pie de pagina cuando corresponde.
     const footerObserver = new IntersectionObserver((entries) => {
         const [entry] = entries;
         document.body.classList.toggle('footer-mode', entry.isIntersecting);
@@ -169,9 +176,17 @@ function renderizarMazos() {
     const grid = document.getElementById('mazosGrid');
     const mazosFiltrados = filtrarMazos();
 
+    if (mazosFiltrados.length === 0) {
+        grid.innerHTML = '<div style="text-align:center; padding: 40px; color: #888; width: 100%;">' +
+            '<i class="bi bi-stack fs-1"></i>' +
+            '<h3>NO HAY MAZOS DISPONIBLES</h3>' +
+            '<p>Actualmente no se ha configurado la armería en la Base de Datos.</p></div>';
+        return;
+    }
+
     grid.innerHTML = mazosFiltrados.map(mazo => crearCardMazo(mazo)).join('');
 
-    // Agregar event listeners a las cards
+    // Agregar event listeners a las cards.
     document.querySelectorAll('.mazo-card').forEach(card => {
         card.addEventListener('click', () => {
             const mazoId = parseInt(card.dataset.mazoId);
@@ -181,14 +196,16 @@ function renderizarMazos() {
 }
 
 function crearCardMazo(mazo) {
-    const progreso = Math.round((mazo.completadas / mazo.totalFlashcards) * 100);
-    const completado = progreso === 100;
+    const progreso = mazo.totalFlashcards > 0 ? Math.round((mazo.completadas / mazo.totalFlashcards) * 100) : 0;
+    const completado = progreso === 100 && mazo.totalFlashcards > 0;
+    const nivelNombre = mazo.nivelNombre || 'General';
+    const nivelClase = nivelNombre.toLowerCase().replace(' ', '-');
 
     return `
         <div class="mazo-card ${completado ? 'completed' : ''}" data-mazo-id="${mazo.id}">
             ${completado ? '<div class="mazo-completed-stamp">COMPLETADO</div>' : ''}
-            <div class="mazo-classification ${mazo.nivelNombre.toLowerCase().replace(' ', '-')}">
-                ${mazo.nivelNombre}
+            <div class="mazo-classification ${nivelClase}">
+                ${nivelNombre}
             </div>
             <div class="mazo-lang-badge ${mazo.idioma}">
                 ${mazo.idioma === 'ru' ? '🇷🇺 RU' : '🇨🇳 ZH'}

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- Recursos de la pantalla de acceso -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operación Babel - Acceso al Sistema</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../Css Babel/Login.css">
+    <script src="../Js babel/Login.js" defer></script>
+</head>
+<body class="login-body">
+    <!-- Navegacion superior reutilizada -->
+    <header>
+        <div class="menu-icon" id="menuBtn">
+            <i class="bi bi-list fs-2"></i>
+        </div>
+        <a class="brand-container" href="../Babelhome.html" aria-label="Volver al inicio">
+            <i class="bi bi-shield-lock fs-3"></i><br>
+            <span>Base de Operaciones Babel</span>
+        </a>
+        <a class="user-icon" href="Perfil.html" aria-label="Perfil">
+            <i class="bi bi-person-badge fs-3"></i>
+        </a>
+    </header>
+
+    <!-- SIDEBAR DE NAVEGACIÓN -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="bi bi-shield-lock fs-2"></i>
+            <span>MENÚ TÁCTICO</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="../Babelhome.html"><i class="bi bi-house-door"></i> Cuartel General</a></li>
+            <li><a href="Mazos.html"><i class="bi bi-stack"></i> Armería de Mazos</a></li>
+            <li><a href="Ahorcado.html"><i class="bi bi-crosshair2"></i> Modo Infiltración</a></li>
+            <li><a href="Enlistamiento.html"><i class="bi bi-file-earmark-text"></i> Registro de Reclutas</a></li>
+        </ul>
+    </nav>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Formulario central de autenticacion -->
+    <div class="login-container">
+        <div class="login-header">
+            <i class="bi bi-shield-lock-fill login-icon"></i>
+            <h1>ACCESO RESTRINGIDO</h1>
+            <p>SISTEMA DE INTELIGENCIA BABEL</p>
+        </div>
+        
+        <form id="loginForm" class="login-form">
+            <div id="loginError" class="alert alert-danger d-none" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> <span id="errorText"></span>
+            </div>
+
+            <div class="mb-4">
+                <label for="correo" class="form-label"><i class="bi bi-envelope-fill text-secondary me-2"></i> Correo Electrónico</label>
+                <input type="email" class="form-control babel-input" id="correo" placeholder="Agente@babel.com" required>
+            </div>
+            
+            <div class="mb-4">
+                <label for="contrasena" class="form-label"><i class="bi bi-key-fill text-secondary me-2"></i> Contraseña de Acceso</label>
+                <input type="password" class="form-control babel-input" id="contrasena" placeholder="Ingresa tu contraseña" required>
+            </div>
+            
+            <button type="submit" class="btn btn-login w-100 mb-3" id="btnSubmit">
+                INICIAR CONEXIÓN <i class="bi bi-box-arrow-in-right ms-2"></i>
+            </button>
+            
+            <div class="text-center mt-3">
+                <p class="text-muted small">¿No tienes credenciales?</p>
+                <a href="Enlistamiento.html" class="enlist-link">Proceder a Enlistamiento</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

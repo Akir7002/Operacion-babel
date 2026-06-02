@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    AHORCADO.JS - Modo Infiltración de Operación Babel
    ═══════════════════════════════════════════════════════════════ */
+const API_BASE = 'http://localhost:3000/api';
 
 // Banco de palabras por nivel
 const palabrasData = [
@@ -44,6 +45,7 @@ const partesAhorcado = [
 
 let gameState = {
     nivel: 0,
+    idiomaSeleccionado: 'ru',
     palabraActual: '',
     pistaActual: '',
     idiomaActual: 'ru',
@@ -60,11 +62,47 @@ let gameState = {
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
     inicializarSidebar();
+    inicializarIdioma();
     inicializarTeclado();
     inicializarModales();
     inicializarScrollBehavior();
     iniciarNivel();
 });
+
+function inicializarIdioma() {
+    const btnRu = document.getElementById('btnLangRu');
+    const btnZh = document.getElementById('btnLangZh');
+    
+    if (btnRu && btnZh) {
+        btnRu.addEventListener('click', () => {
+            if (gameState.idiomaSeleccionado !== 'ru') {
+                gameState.idiomaSeleccionado = 'ru';
+                btnRu.classList.add('active');
+                btnZh.classList.remove('active');
+                btnRu.style.borderColor = 'var(--terminal-amber)';
+                btnRu.style.color = 'var(--terminal-amber)';
+                btnZh.style.borderColor = '#555';
+                btnZh.style.color = '#555';
+                inicializarTeclado();
+                reiniciarJuego();
+            }
+        });
+
+        btnZh.addEventListener('click', () => {
+            if (gameState.idiomaSeleccionado !== 'zh') {
+                gameState.idiomaSeleccionado = 'zh';
+                btnZh.classList.add('active');
+                btnRu.classList.remove('active');
+                btnZh.style.borderColor = 'var(--terminal-amber)';
+                btnZh.style.color = 'var(--terminal-amber)';
+                btnRu.style.borderColor = '#555';
+                btnRu.style.color = '#555';
+                inicializarTeclado();
+                reiniciarJuego();
+            }
+        });
+    }
+}
 
 /* ═══════════════════════════════════════════════════════════════
    SIDEBAR - IGUAL QUE BABELHOME (con body.sidebar-active)
@@ -78,14 +116,15 @@ function inicializarSidebar() {
         return;
     }
 
-    menuBtn.style.cursor = 'pointer';
+    menuBtn.style.cursor = 'pointer'; /* Este es el botón del menú */
     menuBtn.addEventListener('click', () => {
         sidebar.classList.toggle('active');
         overlay.classList.toggle('active');
         document.body.classList.toggle('sidebar-active', sidebar.classList.contains('active'));
     });
 
-    overlay.addEventListener('click', () => {
+    overlay.addEventListener('click', () => { 
+         /*el overlay es el fondo oscuro que aparece al abrir el sidebar */
         sidebar.classList.remove('active');
         overlay.classList.remove('active');
         document.body.classList.remove('sidebar-active');
@@ -93,7 +132,9 @@ function inicializarSidebar() {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SCROLL BEHAVIOR - IGUAL QUE BABELHOME (IntersectionObserver)
+   SCROLL BEHAVIOR - Mostrar botón "Subir" 
+   y ocultar header al bajar, con optimización de rendimiento
+    y detección de scroll en el elemento correcto (no siempre es window)
    ═══════════════════════════════════════════════════════════════ */
 function inicializarScrollBehavior() {
     const heroSection = document.querySelector('.page-hero');
@@ -232,7 +273,8 @@ function iniciarNivel() {
         return;
     }
 
-    const palabraObj = nivelData[Math.floor(Math.random() * nivelData.length)];
+    const palabrasFiltradas = nivelData.filter(p => p.idioma === gameState.idiomaSeleccionado);
+    const palabraObj = palabrasFiltradas[Math.floor(Math.random() * palabrasFiltradas.length)];
     gameState.palabraActual = palabraObj.palabra;
     gameState.pistaActual = palabraObj.pista;
     gameState.idiomaActual = palabraObj.idioma;
@@ -243,7 +285,8 @@ function iniciarNivel() {
 
     resetearAhorcado();
 
-    document.getElementById('hintText').textContent = gameState.pistaActual;
+    console.log("Asignando pista:", gameState.pistaActual);
+    document.getElementById('hintText').innerHTML = `<strong>${gameState.pistaActual}</strong>`;
     document.getElementById('nivelActual').textContent = gameState.nivel + 1;
     document.getElementById('prisonerStatus').textContent = 'SANO';
     document.getElementById('prisonerStatus').className = 'status-value';
@@ -292,11 +335,20 @@ function generarSlotsPalabra() {
 function inicializarTeclado() {
     const keyboard = document.getElementById('keyboard');
 
-    const rows = [
-        ['Й','Ц','У','К','Е','Н','Г','Ш','Щ','З','Х','Ъ'],
-        ['Ф','Ы','В','А','П','Р','О','Л','Д','Ж','Э'],
-        ['Я','Ч','С','М','И','Т','Ь','Б','Ю']
-    ];
+    let rows = [];
+    if (gameState.idiomaSeleccionado === 'ru') {
+        rows = [
+            ['Й','Ц','У','К','Е','Н','Г','Ш','Щ','З','Х','Ъ'],
+            ['Ф','Ы','В','А','П','Р','О','Л','Д','Ж','Э'],
+            ['Я','Ч','С','М','И','Т','Ь','Б','Ю']
+        ];
+    } else {
+        rows = [
+            ['书','水','人','武','器','密','码','医','生','间'],
+            ['谍','监','视','情','报','木','火','土','金','日'],
+            ['月','车','马','手','口','心','目','门','山','川']
+        ];
+    }
 
     keyboard.innerHTML = '';
 
@@ -342,6 +394,7 @@ function intentarLetra(letra) {
         activarEfectoExito();
 
         if (verificarVictoria()) {
+            gameState.juegoTerminado = true;
             setTimeout(() => nivelCompletado(), 800);
         }
     } else {
@@ -353,6 +406,7 @@ function intentarLetra(letra) {
         actualizarEstadoPrisionero();
 
         if (gameState.vidas <= 0) {
+            gameState.juegoTerminado = true;
             setTimeout(() => gameOver(), 800);
         }
     }
@@ -417,7 +471,10 @@ function actualizarLetrasUsadas() {
     const container = document.getElementById('usedChars');
     container.innerHTML = '';
 
-    gameState.letrasUsadas.forEach(letra => {
+    // Solo mostrar las letras usadas que NO están en la palabra (errores reales)
+    const letrasFallidas = gameState.letrasUsadas.filter(letra => !gameState.palabraActual.includes(letra));
+
+    letrasFallidas.forEach(letra => {
         const charDiv = document.createElement('div');
         charDiv.className = 'used-char';
         charDiv.textContent = letra;
@@ -535,7 +592,13 @@ document.addEventListener('keydown', (e) => {
     if (gameState.juegoTerminado) return;
 
     const letra = e.key.toUpperCase();
-    const letrasValidas = 'ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ';
+    let letrasValidas = '';
+
+    if (gameState.idiomaSeleccionado === 'ru') {
+        letrasValidas = 'ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ';
+    } else {
+        letrasValidas = '书水人武器密码医生间谍监视情报木火土金日月车马手口心目门山川';
+    }
 
     if (letrasValidas.includes(letra)) {
         intentarLetra(letra);

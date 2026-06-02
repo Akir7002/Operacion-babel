@@ -1,25 +1,31 @@
+// Configuracion de la conexion SQL compartida por todo el proyecto.
 const sql = require('mssql');
 require('dotenv').config();
 
+// Ajustes de la base de datos tomados desde variables de entorno.
+const serverName = process.env.DB_SERVER || 'localhost';
+const port = parseInt(process.env.DB_PORT, 10) || 1433;
+
 const dbSettings = {
-    server: process.env.DB_SERVER,
-    port: parseInt(process.env.DB_PORT, 10),
+    server: serverName,
+    port: port,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     options: {
-        encrypt: false, 
+        encrypt: false,
         trustServerCertificate: true,
     },
 };
 
+// Abre o reutiliza el pool principal de SQL Server.
 const getConnection = async () => {
     try {
         const pool = await sql.connect(dbSettings);
-        console.log('Conexión táctica a OperacionBabel establecida.');
+        console.log('Conexion tactica a OperacionBabel establecida en puerto', port);
         return pool;
     } catch (error) {
-        console.error('Fallo crítico en la conexión a la base de datos:', error);
+        console.error('Fallo critico en la conexion a la base de datos:', error);
         throw error;
     }
 };

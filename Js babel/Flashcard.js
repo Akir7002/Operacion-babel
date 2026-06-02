@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════
-   FLASHCARDS.JS - Motor de Entrenamiento Táctico
-   Gestión de tarjetas rotativas, vidas, y progreso
-   ═══════════════════════════════════════════════════════════════ */
-
-// Datos de flashcards (simulando respuesta de BD)
+    FLASHCARDS.JS - Motor de Entrenamiento Táctico
+    Gestion de tarjetas rotativas, vidas y progreso.
+    ═══════════════════════════════════════════════════════════════ */
+const API_BASE = 'http://localhost:3000/api';
+// Datos de flashcards usados como respaldo local.
 const flashcardsData = {
     1: [ // Vocabulario Básico RU
         { id: 1, palabra: 'книга', pronunciacion: 'Kniga', traduccion: 'Libro', contexto: 'Objeto de lectura esencial en campo', categoria: 'General' },
@@ -47,7 +47,7 @@ const flashcardsData = {
     ]
 };
 
-// Estado del juego
+// Estado del juego de entrenamiento.
 let gameState = {
     mazo: null,
     flashcards: [],
@@ -106,7 +106,7 @@ function cerrarPantallaDeUnidad() {
     }
 }
 
-// Inicialización
+// Inicializacion principal.
 document.addEventListener('DOMContentLoaded', () => {
     inicializarSidebar();
     cargarMazo();
@@ -242,7 +242,7 @@ async function cargarMazo() {
     
     try {
         // Obtener flashcards de la API
-        const response = await fetch(`http://localhost:3000/api/mazos/${gameState.mazo.id}/flashcards`);
+        const response = await fetch(`${API_BASE}/mazos/${gameState.mazo.id}/flashcards`);
         
         if (!response.ok) {
             throw new Error('Fallo al cargar las flashcards');
@@ -279,7 +279,10 @@ async function cargarMazo() {
         cerrarPantallaDeUnidad();
         
         // Mostrar error
-        document.getElementById('mazoNombre').textContent = '⚠️ ERROR DE CONEXIÓN';
+        const mazoNombre = document.getElementById('mazoNombre');
+        if (mazoNombre) {
+            mazoNombre.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>ERROR DE CONEXIÓN';
+        }
         document.getElementById('totalCards').textContent = '0';
         
         // Mostrar modal de error
@@ -329,8 +332,23 @@ function actualizarProgreso() {
 function actualizarContadores() {
     document.getElementById('countDominadas').textContent = gameState.dominadas;
     document.getElementById('countPendientes').textContent = gameState.flashcards.length - gameState.indiceActual;
-    document.getElementById('countFalladas').textContent = gameState.falladas;
-    document.getElementById('livesCount').textContent = gameState.vidas;
+    const countFalladasEl = document.getElementById('countFalladas');
+    if (countFalladasEl) countFalladasEl.textContent = gameState.falladas;
+    
+    const livesCountEl = document.getElementById('livesCount');
+    if (livesCountEl) livesCountEl.textContent = gameState.vidas;
+    
+    // Update visual hearts if they exist
+    const lives = document.querySelectorAll('.life');
+    if (lives.length > 0) {
+        lives.forEach((life, index) => {
+            if (index < gameState.vidas) {
+                life.classList.add('active');
+            } else {
+                life.classList.remove('active');
+            }
+        });
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════

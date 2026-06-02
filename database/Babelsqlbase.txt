@@ -1,32 +1,8 @@
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   BASE DE DATOS: OPERACION_BABEL
-   PROYECTO: Entrenamiento de Inteligencia Militar (Lenguaje)
-   MOTOR: SQL Server
-   ESTRATEGIA: MULTILENGUAJE ESCALABLE (Cirílico RU + Hanzi ZH)
-   TABLAS TOTALES: 20 (>= 18 requeridas)
-
-   RECOMENDACIONES APLICADAS:
-   ✓ 1. Diccionario: Categoria NVARCHAR → IdCategoria INT (FK a Categorias)
-   ✓ 2. Diccionario: NivelDificultad INT → IdNivel INT (FK a NivelesDificultad)
-   ✓ 3. Índices estratégicos en campos de búsqueda frecuente
-   ✓ 4. Campo AudioUrl en Diccionario (extensible a tabla Audios dedicada)
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-USE master;
+Create database operacionesbabel
+  COLLATE Latin1_General_100_CI_AS_SC_UTF8; -- Soporte completo Unicode para emojis y Hanzi
 GO
 
--- ═══════════════════════════════════════════════════════════════════════════════
--- 0. CREACIÓN DE BASE DE DATOS
--- ═══════════════════════════════════════════════════════════════════════════════
-IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'OperacionBabel')
-BEGIN
-    CREATE DATABASE OperacionBabel
-    COLLATE Latin1_General_100_CI_AS_SC_UTF8; -- Soporte completo Unicode para emojis y Hanzi
-END
-GO
-
-USE OperacionBabel;
+USE operacionesbabel;
 GO
 
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -54,6 +30,7 @@ DROP TABLE IF EXISTS dbo.Categorias;
 DROP TABLE IF EXISTS dbo.Rangos;
 DROP TABLE IF EXISTS dbo.Idiomas;
 GO
+
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- CAPA 1: CATÁLOGOS MAESTROS (4 tablas)
@@ -793,3 +770,364 @@ PRINT '>>> BASE DE DATOS OPERACION_BABEL INICIALIZADA CORRECTAMENTE';
 PRINT '>>> TOTAL DE TABLAS CREADAS: 20';
 PRINT '>>> RECOMENDACIONES APLICADAS: 4/4';
 GO
+
+-- */*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/
+-- 1. Cambiar contraseña y activar al usuario 'sa'
+ALTER LOGIN sa WITH PASSWORD = 'OperacionBabel2026!';
+ALTER LOGIN sa ENABLE;
+GO
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'OperacionBabel')
+    CREATE DATABASE OperacionBabel;
+GO
+
+-- 2. Habilitar la autenticación de Modo Mixto (SQL + Windows)
+EXEC xp_instance_regwrite
+    N'HKEY_LOCAL_MACHINE',
+    N'Software\Microsoft\MSSQLServer\MSSQLServer',
+    N'LoginMode', REG_DWORD, 2;
+GO
+
+-- Verificar el registro más reciente en la Base Babel
+SELECT TOP 5 
+    U.IdUsuario,
+    U.NombreClave,
+    U.EstadoCuenta,
+    R.NombreCompleto,
+    R.FrecuenciaContacto,
+    R.FechaAlistamiento,
+    R.FrenteAsignado,
+    R.CodigoAlistamiento
+FROM Usuarios U
+JOIN RegistrosAlistamiento R ON U.IdUsuario = R.IdUsuario
+ORDER BY R.FechaAlistamiento DESC;
+
+SELECT @@SERVERNAME;
+
+SELECT local_tcp_port 
+FROM sys.dm_exec_connections 
+WHERE session_id = @@SPID;
+
+ALTER LOGIN sa WITH PASSWORD = 'OperacionBabel2026!';
+ALTER LOGIN sa ENABLE;
+GO
+
+
+-- 1. Crear un login nuevo SOLO para la app
+CREATE LOGIN babeluser WITH PASSWORD = 'OperacionBabel2026!', CHECK_POLICY = OFF;
+GO
+
+-- 2. Crear el usuario en la base de datos
+USE OperacionBabel;
+GO
+CREATE USER babeluser FOR LOGIN babeluser;
+GO
+
+-- 3. Darle permisos de dueño (db_owner)
+ALTER ROLE db_owner ADD MEMBER babeluser;
+GO
+
+-- 4. Verificar que quedó bien
+SELECT name, is_disabled, create_date 
+FROM sys.sql_logins 
+WHERE name = 'babeluser';
+
+SELECT 
+    name, 
+    is_disabled, 
+    LOGINPROPERTY(name, 'PasswordLastSetTime') as LastPasswordChange,
+    LOGINPROPERTY(name, 'IsLocked') as IsLocked
+FROM sys.sql_logins 
+WHERE name = 'sa';
+
+ALTER LOGIN babeluser WITH PASSWORD = 'OperacionBabel2026!';
+GO
+
+USE [master];
+GO
+
+-- 1. Verificar si el Login existe, si no, crearlo. Si existe, actualizar contraseña y desbloquear.
+IF NOT EXISTS (SELECT * FROM sys.server_principals WHERE name = 'babeluser')
+BEGIN
+    CREATE LOGIN [babeluser] WITH PASSWORD = 'OperacionBabel2026!', 
+    DEFAULT_DATABASE=[OperacionBabel], 
+    CHECK_EXPIRATION=OFF, CHECK_POLICY=OFF;
+    PRINT 'Login babeluser creado exitosamente.';
+END
+ELSE
+BEGIN
+    ALTER LOGIN [babeluser] WITH PASSWORD = 'OperacionBabel2026!', CHECK_EXPIRATION=OFF, CHECK_POLICY=OFF;
+    ALTER LOGIN [babeluser] ENABLE;
+    PRINT 'Login babeluser actualizado y desbloqueado.';
+END
+GO
+
+-- 2. Vincular el Login a la base de datos OperacionBabel y darle permisos
+USE [OperacionBabel];
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'babeluser')
+BEGIN
+    CREATE USER [babeluser] FOR LOGIN [babeluser];
+END
+ELSE
+BEGIN
+    -- Esto arregla el problema del "usuario huérfano"
+    ALTER USER [babeluser] WITH LOGIN = [babeluser];
+END
+GO
+
+-- Dar permisos totales en la base de datos para evitar problemas de INSERT/UPDATE
+ALTER ROLE [db_owner] ADD MEMBER [babeluser];
+PRINT 'Usuario mapeado y permisos otorgados en OperacionBabel.';
+GO
+
+USE OperacionBabel;
+GO
+
+-- 1. VISTA DE ESTADÍSTICAS GLOBALES DE RECLUTAS
+-- Combina la información del usuario con su registro de alistamiento y rango.
+CREATE OR ALTER VIEW Vista_EstadisticasReclutas AS
+SELECT 
+    U.IdUsuario,
+    U.NombreClave,
+    CASE 
+        WHEN U.IdRango = 1 THEN 'Recluta'
+        WHEN U.IdRango = 2 THEN 'Operador'
+        WHEN U.IdRango = 3 THEN 'General'
+        ELSE 'Desconocido'
+    END AS RangoMilitar,
+    U.PuntosTotales,
+    U.VidasActuales,
+    ISNULL(R.FrenteAsignado, 'No Asignado') AS FrenteAsignado,
+    ISNULL(CONVERT(VARCHAR, R.FechaAlistamiento, 120), 'Sin Registro') AS FechaAlistamiento,
+    U.EstadoCuenta
+FROM 
+    Usuarios U
+LEFT JOIN 
+    RegistrosAlistamiento R ON U.IdUsuario = R.IdUsuario;
+GO
+
+-- 2. VISTA DEL SALÓN DE LA FAMA (TOP AGENTES)
+-- Muestra a los mejores agentes ordenados por sus puntos totales.
+CREATE OR ALTER VIEW Vista_TopAgentes AS
+SELECT TOP 100
+    U.NombreClave,
+    U.PuntosTotales,
+    CASE 
+        WHEN U.IdRango = 1 THEN 'Recluta'
+        WHEN U.IdRango = 2 THEN 'Operador'
+        WHEN U.IdRango = 3 THEN 'General'
+        ELSE 'Desconocido'
+    END AS RangoMilitar,
+    R.FrenteAsignado
+FROM 
+    Usuarios U
+LEFT JOIN 
+    RegistrosAlistamiento R ON U.IdUsuario = R.IdUsuario
+WHERE 
+    U.EstadoCuenta = 'ACTIVO'
+ORDER BY 
+    U.PuntosTotales DESC;
+GO
+
+PRINT 'Vistas creadas correctamente. Listas para ser consultadas por Babel DB.';
+
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- SEED: MAZOS Y FLASHCARDS - OPERACION BABEL
+-- Ejecutar DESPUES de Babelsqlbase.txt (que ya inserta Idiomas, Categorias,
+-- NivelesDificultad y el Diccionario base)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+USE OperacionBabel;
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- PASO 1: COMPLETAR EL DICCIONARIO
+-- El base solo tenía 5 palabras. Aquí se agregan las que usan los mazos.
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Limpiar diccionario previo para evitar duplicados si se ejecuta dos veces
+DELETE FROM Flashcards;
+DELETE FROM MazosFlashcards;
+DELETE FROM Diccionario;
+GO
+
+-- Ruso - Nivel 1 (Clasificado) - Categoría 4 General
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, NotasContexto) VALUES
+(1, 4, 1, N'КНИГА',  N'Kniga',    N'Libro',   N'Objeto de lectura esencial en campo'),
+(1, 4, 1, N'ВОДА',   N'Voda',     N'Agua',    N'Recurso vital para supervivencia'),
+(1, 4, 1, N'ДОМ',    N'Dom',      N'Casa',    N'Estructura de refugio táctico'),
+(1, 4, 1, N'ДРУГ',   N'Drug',     N'Amigo',   N'Aliado de confianza en operación'),
+(1, 4, 1, N'СОЛНЦЕ', N'Solntse',  N'Sol',     N'Referencia de orientación diurna');
+GO
+
+-- Ruso - Nivel 2 (Secreto) - Categoría 1 Militar
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, NotasContexto) VALUES
+(1, 1, 2, N'ОРУЖИЕ',   N'Oruzhiye', N'Arma',    N'Equipamiento táctico de combate'),
+(1, 1, 2, N'ПИСТОЛЕТ', N'Pistolet', N'Pistola', N'Arma de mano para defensa cercana'),
+(1, 1, 2, N'НОЖ',      N'Nozh',     N'Cuchillo',N'Herramienta multifunción de campo'),
+(1, 1, 2, N'ЩИТ',      N'Shchit',   N'Escudo',  N'Protección balística frontal'),
+(1, 1, 2, N'ГРАНАТА',  N'Granata',  N'Granada', N'Explosivo táctico de fragmentación');
+GO
+
+-- Ruso - Nivel 2 (Secreto) - Categoría 2 Supervivencia
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, NotasContexto) VALUES
+(1, 2, 2, N'ВРАЧ',    N'Vrach',    N'Médico',  N'Especialista médico de campo'),
+(1, 2, 2, N'ПОМОЩЬ',  N'Pomoshch', N'Ayuda',   N'Solicitud de refuerzos médicos'),
+(1, 2, 2, N'ВЫХОД',   N'Vykhod',   N'Salida',  N'Ruta de evacuación primaria');
+GO
+
+-- Ruso - Nivel 3 (Ultra Secreto) - Categoría 2 Supervivencia
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, NotasContexto) VALUES
+(1, 2, 3, N'ОПАСНОСТЬ', N'Opasnost',  N'Peligro', N'Señal de alerta inmediata'),
+(1, 2, 3, N'УКРЫТИЕ',   N'Ukrytiye',  N'Refugio', N'Posición defensiva temporal');
+GO
+
+-- Ruso - Nivel 3 (Ultra Secreto) - Categoría 1 Militar
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, NotasContexto) VALUES
+(1, 1, 3, N'ПИСТОЛЕТ', N'Pistolet', N'Pistola', N'Arma de mano para defensa cercana');
+GO
+
+-- Chino - Nivel 1 (Clasificado) - Categoría 4 General
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, NotasContexto) VALUES
+(2, 4, 1, N'书', N'Shū',  N'Libro',   N'Carácter básico de escritura'),
+(2, 4, 1, N'水', N'Shuǐ', N'Agua',    N'Elemento esencial de supervivencia'),
+(2, 4, 1, N'火', N'Huǒ',  N'Fuego',   N'Fuente de calor y señalización'),
+(2, 4, 1, N'人', N'Rén',  N'Persona', N'Referencia humana básica'),
+(2, 4, 1, N'大', N'Dà',   N'Grande',  N'Descriptor de tamaño táctico');
+GO
+
+-- Chino - Nivel 2 (Secreto) - Categoría 5 Contrainteligencia
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, NotasContexto) VALUES
+(2, 5, 2, N'武器', N'Wǔqì',   N'Arma',         N'Sistema de armamento identificado'),
+(2, 5, 2, N'密码', N'Mìmǎ',   N'Contraseña',   N'Clave de acceso encriptada'),
+(2, 5, 2, N'医生', N'Yīshēng', N'Médico',       N'Profesional de la medicina');
+GO
+
+-- Chino - Nivel 3 (Ultra Secreto) - Categoría 5 Contrainteligencia
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, NotasContexto) VALUES
+(2, 5, 3, N'间谍', N'Jiàndié', N'Espía',        N'Agente encubierto hostil'),
+(2, 5, 3, N'监视', N'Jiānshì', N'Vigilancia',   N'Operación de observación continua'),
+(2, 5, 3, N'情报', N'Qíngbào', N'Inteligencia', N'Datos clasificados de operación');
+GO
+
+-- Chino - Nivel 3 (Ultra Secreto) - Categoría 3 Slang
+INSERT INTO Diccionario (IdIdioma, IdCategoria, IdNivel, CaracterOriginal, LecturaAyuda, TraduccionEspanol, NotasContexto) VALUES
+(2, 3, 3, N'哥们儿', N'Gēmenr',  N'Camarada',  N'Término coloquial de camaradería'),
+(2, 3, 3, N'搞定',   N'Gǎodìng', N'Resolver',  N'Completar objetivo táctico'),
+(2, 3, 3, N'靠谱',   N'Kàopǔ',   N'Confiable', N'Evaluación de fiabilidad de aliado');
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- PASO 2: INSERTAR MAZOS
+-- 6 mazos: 3 rusos + 3 chinos (reflejo exacto de Flashcard.js)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+INSERT INTO MazosFlashcards (IdIdioma, IdCategoria, IdNivel, NombreMazo, Descripcion, OrdenVisual, Activo) VALUES
+-- Mazos Rusos
+(1, 4, 1, N'Vocabulario Básico RU',   N'Palabras fundamentales para sobrevivir en territorio ruso',       1, 1),
+(1, 1, 2, N'Arsenal Militar RU',      N'Terminología táctica y armamento del ejército ruso',              2, 1),
+(1, 2, 2, N'Supervivencia Urbana RU', N'Frases críticas para situaciones de emergencia en campo ruso',    3, 1),
+-- Mazos Chinos
+(2, 4, 1, N'Hanzi Fundamentales',     N'Caracteres básicos del mandarín para reconocimiento de campo',    4, 1),
+(2, 5, 2, N'Código Rojo ZH',          N'Vocabulario de contrainteligencia y operaciones encubiertas',     5, 1),
+(2, 3, 3, N'Slang de Campo ZH',       N'Expresiones coloquiales para infiltración en zonas chinas',       6, 1);
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- PASO 3: INSERTAR FLASHCARDS
+-- Relaciona cada mazo con sus palabras del diccionario
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Mazo 1: Vocabulario Básico RU (palabras rusas nivel 1, categoría general)
+INSERT INTO Flashcards (IdMazo, IdItem, OrdenEnMazo, TipoFlashcard)
+SELECT
+    1,
+    d.IdItem,
+    ROW_NUMBER() OVER (ORDER BY d.IdItem),
+    'NORMAL'
+FROM Diccionario d
+INNER JOIN Idiomas i ON d.IdIdioma = i.IdIdioma
+WHERE i.CodigoISO = 'RU' AND d.IdNivel = 1 AND d.IdCategoria = 4;
+GO
+
+-- Mazo 2: Arsenal Militar RU (palabras rusas nivel 2, categoría militar)
+INSERT INTO Flashcards (IdMazo, IdItem, OrdenEnMazo, TipoFlashcard)
+SELECT
+    2,
+    d.IdItem,
+    ROW_NUMBER() OVER (ORDER BY d.IdItem),
+    'NORMAL'
+FROM Diccionario d
+INNER JOIN Idiomas i ON d.IdIdioma = i.IdIdioma
+WHERE i.CodigoISO = 'RU' AND d.IdNivel = 2 AND d.IdCategoria = 1;
+GO
+
+-- Mazo 3: Supervivencia Urbana RU (palabras rusas nivel 2, categoría supervivencia)
+INSERT INTO Flashcards (IdMazo, IdItem, OrdenEnMazo, TipoFlashcard)
+SELECT
+    3,
+    d.IdItem,
+    ROW_NUMBER() OVER (ORDER BY d.IdItem),
+    'NORMAL'
+FROM Diccionario d
+INNER JOIN Idiomas i ON d.IdIdioma = i.IdIdioma
+WHERE i.CodigoISO = 'RU' AND d.IdNivel = 2 AND d.IdCategoria = 2;
+GO
+
+-- Mazo 4: Hanzi Fundamentales (palabras chinas nivel 1, categoría general)
+INSERT INTO Flashcards (IdMazo, IdItem, OrdenEnMazo, TipoFlashcard)
+SELECT
+    4,
+    d.IdItem,
+    ROW_NUMBER() OVER (ORDER BY d.IdItem),
+    'NORMAL'
+FROM Diccionario d
+INNER JOIN Idiomas i ON d.IdIdioma = i.IdIdioma
+WHERE i.CodigoISO = 'ZH' AND d.IdNivel = 1 AND d.IdCategoria = 4;
+GO
+
+-- Mazo 5: Código Rojo ZH (palabras chinas nivel 2, categoría contrainteligencia)
+INSERT INTO Flashcards (IdMazo, IdItem, OrdenEnMazo, TipoFlashcard)
+SELECT
+    5,
+    d.IdItem,
+    ROW_NUMBER() OVER (ORDER BY d.IdItem),
+    'NORMAL'
+FROM Diccionario d
+INNER JOIN Idiomas i ON d.IdIdioma = i.IdIdioma
+WHERE i.CodigoISO = 'ZH' AND d.IdNivel = 2 AND d.IdCategoria = 5;
+GO
+
+-- Mazo 6: Slang de Campo ZH (palabras chinas nivel 3, categoría slang)
+INSERT INTO Flashcards (IdMazo, IdItem, OrdenEnMazo, TipoFlashcard)
+SELECT
+    6,
+    d.IdItem,
+    ROW_NUMBER() OVER (ORDER BY d.IdItem),
+    'NORMAL'
+FROM Diccionario d
+INNER JOIN Idiomas i ON d.IdIdioma = i.IdIdioma
+WHERE i.CodigoISO = 'ZH' AND d.IdNivel = 3 AND d.IdCategoria = 3;
+GO
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- VERIFICACIÓN FINAL
+-- ═══════════════════════════════════════════════════════════════════════════════
+SELECT
+    m.NombreMazo,
+    i.CodigoISO AS Idioma,
+    n.NombreNivel AS Nivel,
+    COUNT(f.IdFlashcard) AS TotalFlashcards
+FROM MazosFlashcards m
+LEFT JOIN Flashcards f ON f.IdMazo = m.IdMazo
+LEFT JOIN Idiomas i ON m.IdIdioma = i.IdIdioma
+LEFT JOIN NivelesDificultad n ON m.IdNivel = n.IdNivel
+GROUP BY m.NombreMazo, i.CodigoISO, n.NombreNivel
+ORDER BY m.OrdenVisual;
+GO
+
+PRINT '>>> SEED COMPLETADO: 6 mazos y flashcards insertadas correctamente';
+GO
+

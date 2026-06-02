@@ -1,3 +1,4 @@
+/* Estilos base de la pagina principal y recursos compartidos. */
     :root {
     --military-red: #b30000;
     --tactical-gray: #2b2b2b;
@@ -300,6 +301,7 @@
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     color: #a0a0a0;
     text-align: center;
+    margin-top: auto;
     }
 
     footer::before,
@@ -569,4 +571,10 @@
 
     .menu-icon {
     cursor: pointer;
+    }
+
+    .user-icon {
+    cursor: pointer;
+    color: inherit;
+    text-decoration: none;
     }

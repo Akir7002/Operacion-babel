@@ -1,10 +1,9 @@
-//esto sirve para el scroll suave entre secciones, y también para mostrar
-//  el botón de scroll-top cuando se hace scroll más allá de cierto punto 
-// en la sección de inicio, lo que mejora la navegación y la experiencia del usuario al permitir un acceso rápido a la parte superior de la página. Además, el código incluye una función para animar los puntos de acción en la sección de frente, proporcionando retroalimentación visual al usuario al hacer clic en ellos.
+// Navegacion suave y realce visual para la pagina principal.
 const scrollButtons = document.querySelectorAll("[data-scroll-to]");
 
 scrollButtons.forEach((button) => {
   button.addEventListener("click", () => {
+    // Lleva al bloque de destino sin salto brusco.
     const targetId = button.getAttribute("data-scroll-to");
     if (!targetId) {
       return;
@@ -21,6 +20,7 @@ const frontActions = document.querySelectorAll(".target-point");
 
 frontActions.forEach((point) => {
   point.addEventListener("click", () => {
+    // Marca temporalmente el punto seleccionado.
     const label = point.querySelector(".label");
     if (!label) {
       return;
@@ -40,6 +40,7 @@ frontActions.forEach((point) => {
 const heroSection = document.getElementById("inicio");
 const upButton = document.querySelector(".rank-corporal");
 
+// Muestra el acceso rapido arriba cuando la pagina ya se desplazo.
 function toggleUpButton() {
   if (!heroSection || !upButton) {
     return;

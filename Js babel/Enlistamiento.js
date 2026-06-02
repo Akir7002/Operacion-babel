@@ -1,13 +1,17 @@
 /* ═══════════════════════════════════════════════════════════════
-   ENLISTAMIENTO.JS - Registro de Reclutas de Operación Babel
-   ═══════════════════════════════════════════════════════════════ */
-
+    ENLISTAMIENTO.JS - Registro de Reclutas de Operación Babel
+    Flujo de validacion, envio y confirmacion de alta.
+    ═══════════════════════════════════════════════════════════════ */
+const API_BASE = 'http://localhost:3000/api';
 document.addEventListener('DOMContentLoaded', () => {
+     // Campos y paneles del formulario de enlistamiento.
     const contactFrequencyInput = document.getElementById('contactFrequency');
     const contactField = document.getElementById('contactField');
     const contactStatus = document.getElementById('contactStatus');
     const enlistmentDateInput = document.getElementById('enlistmentDate');
     const enlistmentDateField = document.getElementById('enlistmentDateField');
+    const recruitPasswordInput = document.getElementById('recruitPassword');
+    const passwordField = document.getElementById('passwordField');
     const frontAssignedSelect = document.getElementById('frontAssigned');
     const frontAssignedField = document.getElementById('frontAssignedField');
     const recruitNameInput = document.getElementById('recruitName');
@@ -22,14 +26,26 @@ document.addEventListener('DOMContentLoaded', () => {
     inicializarSidebar();
     inicializarScrollBehavior();
 
-    function isGmailAddress(value) {
-        return /^[^\s@]+@gmail\.com$/i.test(value.trim());
+    // Comprueba que el contacto tenga forma de correo valido.
+    function isValidEmailAddress(value) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(value.trim());
     }
 
+    // Exige que la fecha coincida con el dia actual.
     function isDateComplete(value) {
-        return /^\d{2}\/\d{2}\/\d{4}$/.test(value.trim());
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(value.trim())) return false;
+        
+        // Obtener la fecha de hoy en formato DD/MM/YYYY
+        const hoy = new Date();
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const anio = hoy.getFullYear();
+        const fechaActual = `${dia}/${mes}/${anio}`;
+        
+        return value.trim() === fechaActual;
     }
 
+    // Refleja visualmente si un campo esta correcto o incompleto.
     function setFieldState(fieldElement, statusElement, isValid) {
         if (!fieldElement || !statusElement) {
             return;
@@ -49,13 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
         setFieldState(fieldElement, statusElement, isValid);
     }
 
+    // Valida el medio de contacto en tiempo real.
     function updateContactValidation() {
         if (!contactFrequencyInput) {
             return;
         }
 
         const value = contactFrequencyInput.value.trim();
-        const isValid = isGmailAddress(value);
+        const isValid = isValidEmailAddress(value);
 
         contactField.classList.toggle('invalid', !isValid);
         contactField.classList.toggle('valid', isValid);
@@ -67,6 +84,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // La contrasena requiere un minimo de longitud.
+    function updatePasswordValidation() {
+        if (!recruitPasswordInput || !passwordField) return;
+        const value = recruitPasswordInput.value.trim();
+        const isValid = value.length >= 4;
+        setFieldState(passwordField, passwordField.querySelector('.field-status'), isValid);
+    }
+
+    // Normaliza la fecha mientras el usuario escribe.
     function formatEnlistmentDate(value) {
         const digits = value.replace(/\D/g, '').slice(0, 8);
         const parts = [];
@@ -84,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return parts.join('/');
     }
 
+    // Comprueba que la fecha final sea valida y actual.
     function updateDateValidation() {
         if (!enlistmentDateInput) {
             return;
@@ -94,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setFieldState(enlistmentDateField, enlistmentDateField ? enlistmentDateField.querySelector('.field-status') : null, isValid);
     }
 
+    // Asegura que el frente haya sido seleccionado.
     function updateFrontValidation() {
         if (!frontAssignedSelect) {
             return;
@@ -103,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setFieldState(frontAssignedField, frontAssignedField ? frontAssignedField.querySelector('.field-status') : null, hasValue);
     }
 
+    // Muestra el sello visual de procesamiento.
     function showStamp() {
         if (!stamp) {
             return;
@@ -111,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         stamp.classList.add('stamp-active');
     }
 
+    // Oculta el sello una vez termina el proceso.
     function hideStamp() {
         if (!stamp) {
             return;
@@ -119,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         stamp.classList.remove('stamp-active');
     }
 
+    // Presenta el resumen final tras un alta exitosa.
     function showSummary(name, contact, date, front) {
         document.getElementById('summaryName').textContent = name;
         document.getElementById('summaryContact').textContent = contact;
@@ -129,11 +160,13 @@ document.addEventListener('DOMContentLoaded', () => {
         summaryView.classList.remove('hidden');
     }
 
+    // Vuelve a mostrar el formulario para una nueva captura.
     function showForm() {
         enlistmentForm.style.display = 'block';
         summaryView.classList.add('hidden');
     }
 
+    // Ejecuta validacion, envio al backend y manejo de respuesta.
     async function processForm(event) {
         if (event) {
             event.preventDefault();
@@ -141,11 +174,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const recruitNameValue = recruitNameInput ? recruitNameInput.value.trim() : '';
         const contactValue = contactFrequencyInput ? contactFrequencyInput.value.trim() : '';
+        const passwordValue = recruitPasswordInput ? recruitPasswordInput.value.trim() : '';
         const dateValue = enlistmentDateInput ? enlistmentDateInput.value.trim() : '';
         const selectedFront = frontAssignedSelect ? frontAssignedSelect.value : '';
 
         updateTextFieldState(recruitNameInput, recruitNameField, recruitNameField ? recruitNameField.querySelector('.field-status') : null);
         updateContactValidation();
+        updatePasswordValidation();
         updateDateValidation();
         updateFrontValidation();
 
@@ -154,10 +189,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (!isGmailAddress(contactValue)) {
+        if (!isValidEmailAddress(contactValue)) {
             contactField.classList.add('invalid');
             contactField.classList.remove('valid');
             contactFrequencyInput && contactFrequencyInput.focus();
+            return;
+        }
+
+        if (passwordValue.length < 4) {
+            recruitPasswordInput && recruitPasswordInput.focus();
             return;
         }
 
@@ -185,6 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     nombre: recruitNameValue,
                     contacto: contactValue,
+                    contrasena: passwordValue,
                     fecha: dateValue,
                     frente: selectedFront
                 })
@@ -202,8 +243,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             window.setTimeout(() => {
                 hideStamp();
-                showSummary(recruitNameValue, contactValue, dateValue, selectedFront);
-                console.log(`Recluta registrado. Nombre Clave: ${data.datos?.NombreClave}, Código: ${data.datos?.CodigoAlistamiento}`);
+                localStorage.setItem('babelUser', JSON.stringify({
+                    idUsuario: data.datos.IdUsuario,
+                    nombreClave: data.datos.NombreClave,
+                    idRango: data.datos.IdRango || 1
+                }));
+                const frontText = frontAssignedSelect.options[frontAssignedSelect.selectedIndex].text;
+                showSummary(recruitNameValue, contactValue, dateValue, frontText);
             }, 2000);
         } catch (error) {
             console.error('Error de comunicación:', error);
@@ -212,6 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Pantalla temporal de bloqueo por fallo de transmision.
     function triggerGameOver() {
         if (!blackout) {
             return;
@@ -226,6 +273,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (contactFrequencyInput) {
         contactFrequencyInput.addEventListener('input', updateContactValidation);
         contactFrequencyInput.addEventListener('blur', updateContactValidation);
+    }
+
+    if (recruitPasswordInput) {
+        recruitPasswordInput.addEventListener('input', updatePasswordValidation);
+        recruitPasswordInput.addEventListener('blur', updatePasswordValidation);
     }
 
     if (enlistmentDateInput) {
@@ -256,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showForm();
             updateTextFieldState(recruitNameInput, recruitNameField, recruitNameField ? recruitNameField.querySelector('.field-status') : null);
             updateContactValidation();
+            updatePasswordValidation();
             updateDateValidation();
             updateFrontValidation();
         });

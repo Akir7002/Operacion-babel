@@ -4,6 +4,7 @@
 
 @import 'Babelhome.css';
 
+/* Estilos especificos del formulario de enlistamiento. */
 :root {
     --paper-color: #c2c0a9;
     --ink-color: #1a1a1a;
@@ -103,6 +104,8 @@ body.header-hidden header {
 
 .user-icon {
     cursor: pointer;
+    color: inherit;
+    text-decoration: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════
