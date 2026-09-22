@@ -1,0 +1,208 @@
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY.CSS - Modo Daltonico + Animaciones Reducidas
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── MODO DALTONICO (Alto contraste + patrones) ─── */
+body.daltonico-mode {
+    --military-red: #d4a017;
+    --military-green: #0077bb;
+    --terminal-amber: #e6a817;
+    --accent-blue: #0077bb;
+    --success-color: #0077bb;
+    --danger-color: #d4a017;
+    --warning-color: #e6a817;
+}
+
+body.daltonico-mode .military-badge { border: 2px solid var(--terminal-amber) !important; }
+body.daltonico-mode .stat-card { border-left: 4px solid var(--accent-blue) !important; }
+
+body.daltonico-mode .key.correct {
+    background: #0077bb !important;
+    border-color: #005a8e !important;
+}
+
+body.daltonico-mode .key.used {
+    background: #d4a017 !important;
+    border-color: #a67c00 !important;
+}
+
+body.daltonico-mode .achievement-card.locked {
+    opacity: 0.7;
+    border: 2px dashed #888 !important;
+}
+
+body.daltonico-mode .mazo-card.completed {
+    border: 3px solid var(--accent-blue) !important;
+}
+
+body.daltonico-mode .mazo-card.locked {
+    border: 3px dashed var(--danger-color) !important;
+}
+
+body.daltonico-mode .progress-bar-fill {
+    background: repeating-linear-gradient(
+        45deg,
+        var(--accent-blue),
+        var(--accent-blue) 5px,
+        var(--terminal-amber) 5px,
+        var(--terminal-amber) 10px
+    ) !important;
+}
+
+body.daltonico-mode .danger,
+body.daltonico-mode .critical {
+    color: var(--danger-color) !important;
+    text-decoration: underline;
+}
+
+body.daltonico-mode .life.active {
+    filter: none;
+}
+
+body.daltonico-mode .life:not(.active) {
+    filter: grayscale(100%);
+}
+
+/* Indicadores de patron para diferenciar elementos */
+body.daltonico-mode .mazo-card[data-lang="ru"]::before {
+    content: '●';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 16px;
+    color: var(--accent-blue);
+}
+
+body.daltonico-mode .mazo-card[data-lang="zh"]::before {
+    content: '◆';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 16px;
+    color: var(--terminal-amber);
+}
+
+/* Etiquetas con iconos textuales */
+body.daltonico-mode .military-badge::after {
+    content: ' [VERIFICADO]';
+    font-size: 9px;
+    letter-spacing: 1px;
+}
+
+/* ─── ANIMACIONES REDUCIDAS ─── */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+body.reduced-animations *,
+body.reduced-animations *::before,
+body.reduced-animations *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.1s !important;
+    scroll-behavior: auto !important;
+}
+
+/* Efecto de daño sin shake */
+body.reduced-animations .damage-overlay.active,
+body.reduced-animations #damageEffect.active {
+    animation: none !important;
+}
+
+body.reduced-animations .flashcard.shake {
+    animation: none !important;
+    border-color: var(--military-red) !important;
+}
+
+/* Transiciones de flashcard simplificadas */
+body.reduced-animations .flashcard-inner {
+    transition: none !important;
+}
+
+body.reduced-animations .flashcard:hover {
+    transform: none !important;
+}
+
+/* Sidebar sin transicion deslizante */
+body.reduced-animations .sidebar {
+    transition: none !important;
+}
+
+/* Progress bars sin animacion */
+body.reduced-animations .progress-bar-fill {
+    transition: width 0.1s ease !important;
+}
+
+/* Hover effects deshabilitados */
+body.reduced-animations .mazo-card:hover {
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+}
+
+body.reduced-animations .achievement-card:hover {
+    transform: none !important;
+}
+
+/* Glow effects deshabilitados */
+body.reduced-animations .key.correct,
+body.reduced-animations .key.used {
+    box-shadow: none !important;
+}
+
+body.reduced-animations .military-badge {
+    animation: none !important;
+}
+
+/* Bordes estaticos en vez de pulsantes */
+body.reduced-animations .flashcard-container .flashcard:not(.flipped) {
+    border: 2px solid rgba(191, 63, 63, 0.4) !important;
+}
+
+/* Scroll-to-top sin animacion flotante */
+body.reduced-animations .scroll-top-btn {
+    animation: none !important;
+    transition: opacity 0.1s ease !important;
+}
+
+/* Letter slots sin reveal animado */
+body.reduced-animations .letter-slot.revealed {
+    animation: none !important;
+    transform: none !important;
+}
+
+/* Game over sin shake */
+body.reduced-animations #gameOverModal.active,
+body.reduced-animations #levelModal.active,
+body.reduced-animations #victoryModal.active {
+    animation: none !important;
+}
+
+/* ─── ALTO CONTRASTE (para usuarios con baja vision) ─── */
+@media (prefers-contrast: high) {
+    .mazo-card {
+        border: 2px solid #fff !important;
+    }
+
+    .achievement-card {
+        border: 2px solid #fff !important;
+    }
+
+    .stat-card {
+        border: 2px solid #fff !important;
+    }
+
+    a, button {
+        text-decoration: underline;
+    }
+
+    .key {
+        border: 2px solid #fff !important;
+    }
+}

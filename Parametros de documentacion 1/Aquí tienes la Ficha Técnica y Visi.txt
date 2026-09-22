@@ -1,0 +1,77 @@
+Aquí tienes la **Ficha Técnica y Visión General del Proyecto** estructurada para que la puedas presentar, documentar o usar como guía de desarrollo:
+
+---
+
+# PROYECTO: BASE DE OPERACIONES BABEL
+
+**Concepto:** Plataforma Gamificada de Aprendizaje de Idiomas mediante una Experiencia de Inteligencia Militar e Infiltración Táctica.
+
+---
+
+## 1. Misión del Proyecto
+
+Transformar el aprendizaje de idiomas complejos (como el ruso o el mandarín) en una **misión de supervivencia y espionaje**. El usuario no entra a una clase tradicional; entra como un recluta a una zona de conflicto donde la falta de comunicación se paga cara y la fluidez es la única forma de conseguir aliados en el frente.
+
+---
+
+## 2. Narrativa y Evolución del Usuario (El "Lore")
+
+* **El Conflicto:** El mundo está al borde de una guerra global. La **Base Babel** recluta activos para interceptar comunicaciones, negociar y entablar alianzas estratégicas.
+* **Progresión de Estatus:**
+1. **Prisionero / Sospechoso (Nivel 0):** Trato frío, imperativo y estricto. Un fallo grave cuesta la conciencia (pantalla en negro y sanción militar).
+2. **Activo en Observación (Nivel Inicial):** Aprendizaje de vocabulario básico y frases de supervivencia en la Armería.
+3. **Especialista de Enlace (Nivel Intermedio):** Descifrado de mensajes, orden de frecuencias e intercepción de señales.
+4. **Camarada / Aliado (Nivel Avanzado):** El tono del sistema cambia a fraternidad y respeto militar.
+
+
+
+---
+
+## 3. Arquitectura de la Plataforma (User Journey)
+
+### A. La Landing Page (El Punto de Contacto)
+
+* **Saludo Inicial:** Terminal Monospace en verde/naranja radar sobre fondo oscuro:
+*`"¡ALTO! Identifíquese o prepárese para ser neutralizado. Está entrando en zona de guerra. Su capacidad de comunicación es su única arma."`*
+* **Acción:** Flecha indicadora hacia el botón **`INICIAR ENLISTAMIENTO`**.
+* **El Formulario:** Se despliega como el **`Expediente del Activo`** (Callsign, Canal Encriptado, Código de Autenticación).
+* **Contenido Informativo:**
+* **Objetivo de la Misión:** Explicación del sistema de infiltración de Babel.
+* **Frentes de Operación:** Selección de idiomas (*Frente Este - Ruso* / *Frente Oriental - Mandarín*).
+
+
+* **Footer:** Estilo documento clasificado ("Desarrollado por la División de Ingeniería de Babel").
+
+
+#### 1. Fase de Preparación — La Armería (Glosario y Tarjetas)
+
+* **Mecánica:** Tarjetas de Inteligencia (Flashcards).
+* **Contenido:** Frente con alfabeto nativo (Cirílico/Caracteres) y reverso con español, audio y la *Guía de Infiltración Oral* (Fonética).
+* **Regla:** Es obligatorio revisar el inventario de la Armería antes de desplegarse a las misiones.
+
+#### 2. Fase de Despliegue — Misiones Tácticas (Mini-juegos)
+
+* **Análisis de Frecuencias (Ordenamiento):** Arrastrar fragmentos de frases interceptadas para estructurar oraciones correctas en el orden gramatical.
+* **Fuego Cruzado (Traducción Rápida):** Términos o frases en español que caen por la pantalla y deben ser traducidos antes de tocar la línea defensiva.
+* **El Decodificador:** Completar palabras con letras o caracteres faltantes antes de que la señal de radio se pierda.
+
+#### 3. El Castigo Táctico (Pantalla de Derrota)
+
+* Si la **"Integridad de la Cobertura"** (barra de vida) llega a cero, la pantalla se apaga a negro de golpe con un efecto de sonido de impacto.
+* Aparece un mensaje aleatorio de reinicio:
+*`"¡DESPIERTE, SOLDADO! El enemigo lo dejó inconsciente de un culatazo porque no pudo ni decir 'Hola'. Vuelva a la línea de combate."`*
+
+---
+
+## 4. Identidad Visual y Tono del Lenguaje
+
+* **Paleta de Colores:** Verde oliva, negro carbón, gris blindaje y detalles en naranja o rojo alerta.
+* **Tipografía:** Monospace (Consola/Terminal) para códigos y sans-serif limpia para lectura pesada.
+* **UI Copy (Textos de la Interfaz):**
+* *Registro* $\rightarrow$ **Expediente del Activo**
+* *Nombre de Usuario* $\rightarrow$ **Callsign**
+* *Perfil* $\rightarrow$ **Hoja de Servicio**
+* *Progreso* $\rightarrow$ **Integridad de Cobertura**
+* *Lecciones Completadas* $\rightarrow$ **SITREP (Reporte de Situación)**
+
+
