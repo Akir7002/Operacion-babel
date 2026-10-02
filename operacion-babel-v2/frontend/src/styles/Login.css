@@ -1,0 +1,141 @@
+@import 'Babelhome.css';
+
+/* Estilos de la pantalla de acceso - Tema Azul Tactico Oscuro */
+:root {
+    --military-dark: #000000;
+    --military-blue: #1a3a5c;
+    --military-blue-light: #2563a0;
+    --military-accent: #d0d0d0;
+    --text-primary: #ffffff;
+    --text-muted: #a0a0a0;
+    --panel-bg: #050505;
+    --border-color: #1e2d3d;
+}
+
+body.login-body {
+    background-color: var(--military-dark);
+    background-image:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(26, 58, 92, 0.15) 0%, transparent 70%),
+        linear-gradient(180deg, #000 0%, #040810 50%, #000 100%);
+    color: var(--text-primary);
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: safe center;
+    justify-content: center;
+    margin: 0;
+    padding: 140px 20px 40px;
+}
+
+body.login-body header {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 70%, transparent 100%);
+    padding-bottom: 30px;
+}
+
+.login-container {
+    background-color: rgba(8, 12, 18, 0.97);
+    border: 1px solid var(--border-color);
+    border-top: 3px solid var(--military-blue);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), 0 0 80px rgba(26, 58, 92, 0.08);
+    border-radius: 4px;
+    padding: 40px;
+    width: 100%;
+    max-width: 450px;
+    margin: auto 0;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+}
+
+.login-icon {
+    font-size: 3rem;
+    color: var(--military-blue-light);
+    margin-bottom: 10px;
+    text-shadow: 0 0 12px rgba(37, 99, 160, 0.4);
+}
+
+.login-header h1 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin: 0;
+    color: white;
+}
+
+.login-header p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.babel-input {
+    background-color: #020408;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-family: 'Courier New', Courier, monospace;
+    padding: 12px 15px;
+}
+
+.babel-input:focus {
+    background-color: #040810;
+    border-color: var(--military-blue-light);
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 160, 0.25);
+}
+
+.btn-login {
+    background-color: var(--military-blue);
+    color: white;
+    border: 1px solid #0f2640;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    background-color: var(--military-blue-light);
+    color: white;
+    box-shadow: 0 0 18px rgba(26, 58, 92, 0.4);
+}
+
+.enlist-link {
+    color: var(--military-accent);
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.2s;
+}
+
+.enlist-link:hover {
+    color: #7ab3e6;
+    text-decoration: underline;
+}
+
+.alert-danger {
+    background-color: rgba(179, 0, 0, 0.15);
+    border-color: #5a2020;
+    color: #ff9999;
+    font-size: 0.9rem;
+}
+
+.alert-success {
+    background-color: rgba(26, 58, 92, 0.2);
+    border-color: var(--military-blue);
+    color: #99ccff;
+    font-size: 0.85rem;
+}
+
+.alert-success code {
+    background: rgba(26, 58, 92, 0.3);
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-top: 4px;
+    color: #b8d8f8;
+}

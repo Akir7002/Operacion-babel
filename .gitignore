@@ -1,4 +1,27 @@
-node_modules
+# Dependencias
+node_modules/
+**/node_modules/
+
+# Entorno y credenciales
 .env
+.env.*
 .env.keys
+!.env.example
+
+# Logs y temporales
 *.log
+**/*.log
+
+# Compilación y cache Angular/Node
+dist/
+**/dist/
+.angular/
+**/.angular/
+out-tsc/
+**/out-tsc/
+.sass-cache/
+
+# IDE y Sistema
+.DS_Store
+Thumbs.db
+

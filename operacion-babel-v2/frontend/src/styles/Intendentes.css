@@ -1,0 +1,41 @@
+@import 'Enlistamiento.css';
+
+.intendente-paper {
+    width: min(980px, calc(100vw - 56px));
+}
+
+.intendente-copy {
+    max-width: 840px;
+}
+
+.intendente-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 20px;
+    align-items: start;
+}
+
+.intendente-form .field:nth-child(4),
+.intendente-form .btn-enviar {
+    grid-column: 1 / -1;
+}
+
+.intendente-note {
+    grid-column: 1 / -1;
+    padding: 18px 20px;
+    border: 1px solid rgba(26, 26, 26, 0.14);
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.intendente-note strong {
+    display: block;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+@media (max-width: 980px) {
+    .intendente-form {
+        grid-template-columns: 1fr;
+    }
+}

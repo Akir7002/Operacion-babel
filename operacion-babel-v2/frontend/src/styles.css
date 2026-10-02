@@ -1,0 +1,52 @@
+/* ═══════════════════════════════════════════════════════════════
+   OPERACIÓN BABEL - ESTILOS GLOBALES
+   ═══════════════════════════════════════════════════════════════ */
+
+@import './styles/Babelhome.css';
+@import './styles/accessibility.css';
+
+:root {
+  /* Paleta Base Táctica */
+  --military-red: #b30000;
+  --tactical-gray: #2b2b2b;
+  --terminal-green: #00ff41;
+  --terminal-amber: #8b7355;
+  --smoke-color: rgba(255, 255, 255, 0.05);
+  --sidebar-width: 280px;
+  --bg-dark: #0a0a0a;
+  --nav-height: 80px;
+
+  /* Estética de Reclutamiento (Documento Vintage & Tinta) */
+  --paper-color: #c2c0a9;
+  --ink-color: #1a1a1a;
+  --stamp-color: #a31d1d;
+
+  /* Estética Armería & Combate */
+  --card-bg: rgba(25, 25, 25, 0.9);
+}
+
+/* Ajustes para SPA en Angular */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-dark);
+  color: #fff;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* El main view ocupa el espacio entre header y footer */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.main-viewport {
+  flex: 1;
+  position: relative;
+  z-index: 5;
+}
